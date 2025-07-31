@@ -1,0 +1,23 @@
+server:
+  port: ${PORT:8080}
+  servlet:
+    context-path: /api
+
+spring:
+  datasource:
+    url: jdbc:postgresql://aws-0-ap-southeast-1.pooler.supabase.com:6543/postgres
+    username: postgres.vlmlsyrwuyeqjjozvnbt
+    password: 12345678
+  hikari:
+    data-source-properties:
+      prepareThreshold: 0
+  jpa:
+    hibernate:
+      ddl-auto: update
+      show-sql: true
+  jwt:
+    secret: "XGSmokiuzGw0KSLSuPYCPICGkL3DsomcgLs+9c8qMhnUt+K/1soPJqvg8KyF3e/4"
+    issuer: GiaoThongTM
+    access-token-expiration-time: 3600
+    refresh-token-expiration-time: 604800
+
