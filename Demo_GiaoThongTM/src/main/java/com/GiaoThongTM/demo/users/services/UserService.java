@@ -54,13 +54,6 @@ public class UserService {
         return userMapper.toUserResponse(user);
     }
 
-    public UserResponse updateUser(UUID userId, UserUpdateRequest updateRequest){
-        User user = findByIdOrThrow(userId);
-        userMapper.updateUser(user, updateRequest);
-        var roles = roleRepository.findAllById(updateRequest.getRoles());
-        user.setRoles(new HashSet<>(roles));
-        return userMapper.toUserResponse(user);
-    }
 
     public User findByUsernameOrThrow(String username){
         return userRepository.findByUsername(username).orElseThrow(()->new AppException(ErrorCode.USER_NOT_FOUND));
@@ -71,9 +64,26 @@ public class UserService {
                 .orElseThrow(()->new AppException(ErrorCode.USER_NOT_FOUND));
     }
 
+    public void deleteInfo(){
+        var context = SecurityContextHolder.getContext();
+        String name = context.getAuthentication().getName();
+        User user = userRepository.findByUsername(name).orElseThrow(
+                () -> new AppException(ErrorCode.USER_NOT_FOUND));
+        userRepository.delete(user);
+    }
 
+    @PreAuthorize("hasAuthority('SCOPE_ADMIN')")
     public void deleteUser(UUID userId){
         userRepository.deleteById(userId);
+    }
+
+    @PreAuthorize("hasAuthority('SCOPE_ADMIN')")
+    public UserResponse updateUser(UUID userId, UserUpdateRequest updateRequest){
+        User user = findByIdOrThrow(userId);
+        userMapper.updateUser(user, updateRequest);
+        var roles = roleRepository.findAllById(updateRequest.getRoles());
+        user.setRoles(new HashSet<>(roles));
+        return userMapper.toUserResponse(user);
     }
 
     @PreAuthorize("hasAuthority('SCOPE_ADMIN')")

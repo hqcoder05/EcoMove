@@ -31,7 +31,28 @@ public class BookingController {
         return ResponseEntity.status(response.getCode()).body(response);
     }
 
-    @GetMapping("/get-booking")
+    @GetMapping("/get-user-booking")
+    public ResponseEntity<ApiResponse<BookingResponse>> getUserBooking() {
+        BookingResponse bookingResponse = bookingService.getUserBooking();
+        var response = ApiResponse.<BookingResponse>builder()
+                .code(200)
+                .message("Lấy thông tin lịch sử đặt xe thành công")
+                .result(bookingResponse)
+                .build();
+        return ResponseEntity.status(response.getCode()).body(response);
+    }
+
+    @PutMapping("/cancel-user-booking")
+    public ResponseEntity<ApiResponse<String>> cancelUserBooking() {
+        bookingService.cancelUserBooking();
+        var response = ApiResponse.<String>builder()
+                .code(200)
+                .result("Bạn đã hủy đơn thành công")
+                .build();
+        return ResponseEntity.status(response.getCode()).body(response);
+    }
+
+    @GetMapping("/{bookingId}/get-booking")
     public ResponseEntity<ApiResponse<BookingResponse>> getBooking(@PathVariable UUID bookingId) {
         BookingResponse bookingResponse = bookingService.getBooking(bookingId);
         var response = ApiResponse.<BookingResponse>builder()
@@ -74,8 +95,8 @@ public class BookingController {
         return ResponseEntity.status(response.getCode()).body(response);
     }
 
-    @GetMapping("/{bookingId}/get-all")
-    public ResponseEntity<ApiResponse<List<BookingResponse>>> getAllBookings(@PathVariable UUID bookingId) {
+    @GetMapping("/get-all")
+    public ResponseEntity<ApiResponse<List<BookingResponse>>> getAllBookings() {
         List<BookingResponse> booking = bookingService.getAllBookings();
         var response = ApiResponse.<List<BookingResponse>>builder()
                 .code(200)

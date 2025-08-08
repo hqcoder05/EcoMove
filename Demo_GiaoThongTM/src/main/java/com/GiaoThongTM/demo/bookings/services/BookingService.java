@@ -78,6 +78,31 @@ public class BookingService {
         return bookingMapper.toBookingResponse(booking);
     }
 
+    public BookingResponse getUserBooking(){
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+        Booking booking = bookingRepository
+                .findByUserAndStatusIn(user, List.of(BookingStatus.Pending, BookingStatus.Confirmed))
+                .orElseThrow(() -> new AppException(ErrorCode.BOOKING_INVALID));
+        return bookingMapper.toBookingResponse(booking);
+    }
+
+    public void cancelUserBooking(){
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+        Booking booking = bookingRepository
+                .findByUserAndStatusIn(user, List.of(BookingStatus.Pending, BookingStatus.Confirmed))
+                .orElseThrow(() -> new AppException(ErrorCode.BOOKING_INVALID));
+        if (booking.getStatus() != BookingStatus.Pending && booking.getStatus() != BookingStatus.Confirmed) {
+            throw new AppException(ErrorCode.STATUS_INVALID_TRANSITION);
+        }
+        booking.setStatus(BookingStatus.Canceled);
+        bookingRepository.delete(booking);
+    }
+
+    @PreAuthorize("hasAuthority('SCOPE_ADMIN')")
     public BookingResponse updateBooking(UUID bookingId, BookingUpdateRequest bookingUpdateRequest) {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
 
@@ -123,17 +148,14 @@ public class BookingService {
         return bookingMapper.toBookingResponse(booking);
     }
 
+    @PreAuthorize("hasAuthority('SCOPE_ADMIN')")
     public BookingResponse getBooking(UUID bookingId) {
-        String username = SecurityContextHolder.getContext().getAuthentication().getName();
-
         Booking booking = bookingRepository.findById(bookingId).orElseThrow(
                 () -> new AppException(ErrorCode.BOOKING_INVALID));
-        if (!booking.getUser().getUsername().equals(username)) {
-            throw new AppException(ErrorCode.USERBOOKING_INVALID);
-        }
         return bookingMapper.toBookingResponse(booking);
     }
 
+    @PreAuthorize("hasAuthority('SCOPE_ADMIN')")
     public void cancelBooking(UUID bookingId) {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
 
@@ -142,8 +164,8 @@ public class BookingService {
         if(!booking.getUser().getUsername().equals(username)) {
             throw new AppException(ErrorCode.USERBOOKING_INVALID);
         }
-        if(booking.getStatus() != BookingStatus.Pending) {
-            throw new AppException(ErrorCode.PENDING_INVALID);
+        if (booking.getStatus() != BookingStatus.Pending && booking.getStatus() != BookingStatus.Confirmed) {
+            throw new AppException(ErrorCode.STATUS_INVALID_TRANSITION);
         }
         booking.setStatus(BookingStatus.Canceled);
         bookingRepository.save(booking);

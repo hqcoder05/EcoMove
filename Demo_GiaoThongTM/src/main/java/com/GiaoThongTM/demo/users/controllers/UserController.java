@@ -1,6 +1,7 @@
 package com.GiaoThongTM.demo.users.controllers;
 
 import com.GiaoThongTM.demo.commons.dtos.ApiResponse;
+import com.GiaoThongTM.demo.users.dtos.request.UserUpdateRequest;
 import com.GiaoThongTM.demo.users.dtos.response.UserResponse;
 import com.GiaoThongTM.demo.users.services.UserService;
 import lombok.RequiredArgsConstructor;
@@ -38,6 +39,16 @@ public class UserController {
         return ResponseEntity.status(response.getCode()).body(response);
     }
 
+    @DeleteMapping
+    public ResponseEntity<ApiResponse<String>> deleteInfo(){
+        userService.deleteInfo();
+        var response = ApiResponse.<String>builder()
+                .code(200)
+                .result("Xóa thông tin người dùng thành công")
+                .build();
+        return ResponseEntity.status(response.getCode()).body(response);
+    }
+
     @GetMapping("/{userId}")
     public ResponseEntity<ApiResponse<UserResponse>> getUser(@PathVariable UUID userId) {
         var response = ApiResponse.<UserResponse>builder()
@@ -48,8 +59,19 @@ public class UserController {
         return ResponseEntity.status(response.getCode()).body(response);
     }
 
-    @DeleteMapping
-    public ResponseEntity<ApiResponse<String>> deleteUser(@PathVariable("userId") UUID userId) {
+    @PutMapping("/{userId}")
+    public ResponseEntity<ApiResponse<UserResponse>> updateInfo(@PathVariable UUID userId, @RequestBody UserUpdateRequest userUpdateRequest) {
+        UserResponse user = userService.updateUser(userId, userUpdateRequest);
+        var response = ApiResponse.<UserResponse>builder()
+                .code(200)
+                .message("Cập nhật người dùng thành công")
+                .result(user)
+                .build();
+        return ResponseEntity.status(response.getCode()).body(response);
+    }
+
+    @DeleteMapping("/{userId}")
+    public ResponseEntity<ApiResponse<String>> deleteUser(@PathVariable UUID userId) {
         userService.deleteUser(userId);
         var response = ApiResponse.<String>builder()
                 .code(200)
