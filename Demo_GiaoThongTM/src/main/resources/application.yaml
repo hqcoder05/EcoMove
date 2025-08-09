@@ -21,3 +21,6 @@ spring:
     access-token-expiration-time: 3600
     refresh-token-expiration-time: 604800
 
+python:
+  api:
+    url: "http://127.0.0.1:8000"
