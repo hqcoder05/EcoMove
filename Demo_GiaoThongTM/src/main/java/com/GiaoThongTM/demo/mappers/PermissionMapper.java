@@ -4,7 +4,6 @@ import com.GiaoThongTM.demo.dtos.request.PermissionRequest;
 import com.GiaoThongTM.demo.dtos.response.PermissionResponse;
 import com.GiaoThongTM.demo.entities.Permission;
 import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
 
 @Mapper(componentModel = "spring")
 public interface PermissionMapper {

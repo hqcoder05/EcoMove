@@ -6,11 +6,9 @@ import com.GiaoThongTM.demo.dtos.request.SignUp;
 import com.GiaoThongTM.demo.dtos.response.ApiResponse;
 import com.GiaoThongTM.demo.dtos.response.AuthResponse;
 import com.GiaoThongTM.demo.services.AuthService;
-import com.GiaoThongTM.demo.utils.AuthUtil;
 import com.nimbusds.jose.JOSEException;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -18,7 +16,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.text.ParseException;
-import java.util.UUID;
 
 @RestController
 @RequestMapping("/auth")

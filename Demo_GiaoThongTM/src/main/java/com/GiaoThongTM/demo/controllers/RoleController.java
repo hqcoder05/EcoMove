@@ -5,7 +5,6 @@ import com.GiaoThongTM.demo.dtos.response.ApiResponse;
 import com.GiaoThongTM.demo.dtos.response.RoleResponse;
 import com.GiaoThongTM.demo.services.RoleService;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 

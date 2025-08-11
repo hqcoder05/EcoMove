@@ -2,7 +2,6 @@ package com.GiaoThongTM.demo.services;
 
 import com.GiaoThongTM.demo.dtos.request.RoleRequest;
 import com.GiaoThongTM.demo.dtos.response.RoleResponse;
-import com.GiaoThongTM.demo.entities.Role;
 import com.GiaoThongTM.demo.mappers.RoleMapper;
 import com.GiaoThongTM.demo.repositories.PermissionRepository;
 import com.GiaoThongTM.demo.repositories.RoleRepository;
@@ -12,7 +11,6 @@ import org.springframework.stereotype.Service;
 
 import java.util.HashSet;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
