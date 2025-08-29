@@ -12,8 +12,8 @@ import java.util.List;
 @AllArgsConstructor
 @Builder
 public class UserUpdateRequest {
-    String username;
-    String fullName;
-    String password;
-    List<String> roles;
+    private String username;
+    private String fullName;
+    private String password;
+    private List<String> roles;
 }

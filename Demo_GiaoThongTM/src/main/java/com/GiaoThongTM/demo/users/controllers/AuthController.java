@@ -10,10 +10,7 @@ import com.nimbusds.jose.JOSEException;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.text.ParseException;
 
@@ -37,19 +34,23 @@ public class AuthController {
     }
 
     @PostMapping("/sign-up")
-    public ResponseEntity<ApiResponse<Void>> signUp(@Valid @RequestBody SignUp request){
-        authService.signUp(request);
-        var response = ApiResponse.<Void>builder()
+    public ResponseEntity<ApiResponse<AuthResponse>> signUp(@Valid @RequestBody SignUp request){
+        AuthResponse result = authService.signUp(request);
+        var response = ApiResponse.<AuthResponse>builder()
                 .code(201)
                 .message("Tạo tài khoản mới thành công")
+                .result(result)
                 .build();
         return ResponseEntity.status(response.getCode()).body(response);
     }
 
     @PostMapping("/sign-out")
-    public ResponseEntity<ApiResponse<Void>> signOut(@RequestBody SignOut request) throws ParseException, JOSEException {
+    public ResponseEntity<ApiResponse<String>> signOut(@RequestBody SignOut request) throws ParseException, JOSEException {
         authService.signOut(request);
-        var response = ApiResponse.<Void>builder().build();
+        var response = ApiResponse.<String>builder()
+                .code(200)
+                .message("Đăng xuất thành công")
+                .build();
         return ResponseEntity.status(response.getCode()).body(response);
     }
 }
