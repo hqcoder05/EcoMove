@@ -3,6 +3,7 @@ package com.GiaoThongTM.demo.stations.entities;
 import jakarta.persistence.*;
 import lombok.*;
 import java.util.UUID;
+import org.hibernate.annotations.UuidGenerator;           // <— thêm import
 
 @Entity
 @Table(name = "stations")
@@ -13,8 +14,9 @@ import java.util.UUID;
 public class Station {
 
     @Id
+    @UuidGenerator                                     // <— để Hibernate tự sinh UUID
     @Column(name = "station_id", nullable = false, updatable = false)
-    private UUID stationId; // Để trống khi insert -> DB tự sinh (DEFAULT gen_random_uuid())
+    private UUID stationId;
 
     @Column(name = "station_name", nullable = false)
     private String stationName;

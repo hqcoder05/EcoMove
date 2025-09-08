@@ -1,18 +1,16 @@
 package com.GiaoThongTM.demo.vehicles.dtos.request;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
-import java.util.List;
-
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
+@Data @NoArgsConstructor @AllArgsConstructor @Builder
 public class VehicleRequest {
-    private String name;
-    private String type;
-    private List<String> stations;
+    // Giữ nguyên tên field theo UI để FE gửi thẳng không phải đổi
+    private String name;     // entity.name
+    private String image;    // entity.imageUrl
+    private String price;    // "1.200.000" -> entity.pricePerDay (Long)
+    private String type;     // entity.type
+    private String range;    // "450km" -> entity.rangeKm (Integer)
+    private String seats;    // "5 chỗ" -> entity.seats (Integer)
+    private String trunk;    // "450L" -> entity.trunkLiters (Integer)
+    private String status;   // "available"|"rented"|"maintenance" -> enum
 }
