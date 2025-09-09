@@ -2,6 +2,7 @@ package com.GiaoThongTM.demo.users.entities;
 
 import com.GiaoThongTM.demo.bookings.entities.Booking;
 import com.GiaoThongTM.demo.users.enums.Role;
+import com.GiaoThongTM.demo.vehicles.entities.Vehicle;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -39,7 +40,4 @@ public class User {
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
     private Set<Role> role;
-
-//    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
-//    private List<Booking> bookings;
 }

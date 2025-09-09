@@ -13,6 +13,7 @@ import java.util.Set;
 @Component
 public class UserCustomMapper {
     public User toUser(SignUp request){
+
         User user = new User();
         user.setUsername(request.getUsername());
         user.setPassword(request.getPassword());
@@ -22,6 +23,7 @@ public class UserCustomMapper {
 
         return user;
     }
+
     public UserResponse toUserResponse(User user){
         if (user == null) {
             return null;
@@ -35,6 +37,7 @@ public class UserCustomMapper {
 
         return userResponse;
     }
+
     public void toUserUpdate(User user, UserUpdateRequest request){
         if(user == null || request == null){
             return;
@@ -48,8 +51,8 @@ public class UserCustomMapper {
         if(request.getPhoneNumber() != null){
             user.setPhoneNumber(request.getPhoneNumber());
         }
-
-        user.setUsername(request.getUsername());
-
+        if(request.getFullName() != null){
+            user.setName(request.getFullName());
+        }
     }
 }

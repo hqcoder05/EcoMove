@@ -1,5 +1,6 @@
 package com.GiaoThongTM.demo.bookings.dtos.response;
 import com.GiaoThongTM.demo.stations.dtos.response.StationResponse;
+import com.GiaoThongTM.demo.users.dtos.response.UserResponse;
 import com.GiaoThongTM.demo.vehicles.dtos.response.VehicleResponse;
 import com.GiaoThongTM.demo.bookings.enums.BookingStatus;
 import lombok.*;
@@ -21,5 +22,6 @@ public class BookingResponse {
     private BookingStatus status;
     private VehicleResponse vehicle;
     private long durationDays;
+    private UserResponse user;
 //    private long totalPrice;
 }

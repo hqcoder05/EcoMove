@@ -46,11 +46,9 @@ public class Booking {
     private User user;
 
     @ManyToOne
-    @JoinColumn(name = "pickup_station_id")
     private Station pickupStation;
 
     @ManyToOne
-    @JoinColumn(name = "return_station_id")
     private Station returnStation;
 
     @ManyToOne

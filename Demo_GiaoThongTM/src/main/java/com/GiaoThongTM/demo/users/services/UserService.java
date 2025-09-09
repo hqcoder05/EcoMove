@@ -8,6 +8,7 @@ import com.GiaoThongTM.demo.users.entities.User;
 import com.GiaoThongTM.demo.commons.enums.ErrorCode;
 import com.GiaoThongTM.demo.commons.exceptions.AppException;
 import com.GiaoThongTM.demo.users.enums.Role;
+import com.GiaoThongTM.demo.users.mappers.UserCustomMapper;
 import com.GiaoThongTM.demo.users.mappers.UserMapper;
 import com.GiaoThongTM.demo.users.repositories.RoleRepository;
 import com.GiaoThongTM.demo.users.repositories.UserRepository;
@@ -27,9 +28,7 @@ import java.util.stream.Collectors;
 public class UserService {
     private final UserRepository userRepository;
 
-    private final RoleRepository roleRepository;
-
-    private final UserMapper userMapper;
+    private final UserCustomMapper userCustomMapper;
 
     public User createUser(SignUp request){
         String username = request.getUsername().toLowerCase();
@@ -44,10 +43,7 @@ public class UserService {
             throw new AppException(ErrorCode.USER_EXISTED);
         }
 
-        User user = userMapper.toUser(request);
-        Set<Role> roles = new HashSet<>();
-        roles.add(Role.USER);
-        user.setRole(roles);
+        User user = userCustomMapper.toUser(request);
 
         User savedUser = userRepository.save(user);
 
@@ -59,7 +55,7 @@ public class UserService {
         String name = context.getAuthentication().getName();
         User user = userRepository.findByUsername(name).orElseThrow(
                 () -> new AppException(ErrorCode.USER_NOT_FOUND));
-        return userMapper.toUserResponse(user);
+        return userCustomMapper.toUserResponse(user);
     }
 
 
@@ -88,18 +84,21 @@ public class UserService {
 //    @PreAuthorize("hasAuthority('SCOPE_ADMIN')")
     public UserResponse updateUser(UUID userId, UserUpdateRequest updateRequest){
         User user = findByIdOrThrow(userId);
-        userMapper.updateUser(user, updateRequest);
-        return userMapper.toUserResponse(user);
+        userCustomMapper.toUserUpdate(user, updateRequest);
+        return userCustomMapper.toUserResponse(user);
     }
 
 //    @PreAuthorize("hasAuthority('SCOPE_ADMIN')")
     public UserResponse getUserProfile(UUID userId){
         User user = findByIdOrThrow(userId);
-        return userMapper.toUserResponse(user);
+        return userCustomMapper.toUserResponse(user);
     }
 
 //    @PreAuthorize("hasAuthority('SCOPE_ADMIN')")
     public List<UserResponse> getAllUsers(){
-        return userRepository.findAll().stream().map(user -> userMapper.toUserResponse(user)).toList();
+        return userRepository.findAll()
+                .stream()
+                .map(user -> userCustomMapper.toUserResponse(user))
+                .toList();
     }
 }

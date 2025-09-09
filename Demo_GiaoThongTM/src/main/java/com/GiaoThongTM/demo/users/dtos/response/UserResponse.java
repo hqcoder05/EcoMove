@@ -17,6 +17,6 @@ public class UserResponse {
     private UUID id;
     private String name;
     private String username;
+    private String phoneNumber;
     private Set<Role> roles;
-//    private List<BookingResponse> bookings;
 }

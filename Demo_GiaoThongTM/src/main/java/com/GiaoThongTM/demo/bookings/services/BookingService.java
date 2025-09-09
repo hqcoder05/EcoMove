@@ -35,7 +35,7 @@ public class BookingService {
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
         boolean exists = bookingRepository.existsByUserAndStatusIn(
                 user,
-                List.of(BookingStatus.Pending, BookingStatus.Confirmed)
+                List.of(BookingStatus.PENDING, BookingStatus.CONFIRMED)
         );
 
         if (exists) {
