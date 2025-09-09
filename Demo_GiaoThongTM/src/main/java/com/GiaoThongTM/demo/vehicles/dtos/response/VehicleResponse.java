@@ -1,17 +1,18 @@
 package com.GiaoThongTM.demo.vehicles.dtos.response;
 
-import com.GiaoThongTM.demo.stations.dtos.response.StationResponse;
 import lombok.*;
+import java.util.UUID;
 
-import java.util.List;
-
-@Setter
-@Getter
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
+@Setter @Getter @NoArgsConstructor @AllArgsConstructor @Builder
 public class VehicleResponse {
-    private String vehicleName;
-    private String vehicleType;
-    private List<StationResponse> stations;
+    // Trả đúng shape UI mong đợi
+    private UUID id;
+    private String name;
+    private String image;
+    private String price;   // "1.200.000"
+    private String type;
+    private String range;   // "450km"
+    private String seats;   // "5 chỗ"
+    private String trunk;   // "450L"
+    private String status;  // "available" | "rented" | "maintenance"
 }
