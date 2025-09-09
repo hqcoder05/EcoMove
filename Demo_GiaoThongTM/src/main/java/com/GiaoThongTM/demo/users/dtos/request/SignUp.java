@@ -14,5 +14,6 @@ public class SignUp {
     @Size(min = 2, message = "USERNAME_INVALID")
     private String username;
     private String name;
+    private String phoneNumber;
     private String password;
 }

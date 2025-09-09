@@ -1,6 +1,7 @@
 package com.GiaoThongTM.demo.users.controllers;
 
 import com.GiaoThongTM.demo.commons.dtos.ApiResponse;
+import com.GiaoThongTM.demo.commons.utils.AuthUtil;
 import com.GiaoThongTM.demo.users.dtos.request.UserUpdateRequest;
 import com.GiaoThongTM.demo.users.dtos.response.UserResponse;
 import com.GiaoThongTM.demo.users.services.UserService;
@@ -19,7 +20,9 @@ public class UserController {
 
     @GetMapping("/get-user-profile")
     public ResponseEntity<ApiResponse<UserResponse>> getUserProfile() {
-        UserResponse user = userService.getMyInfo();
+        UUID uuid = AuthUtil.getUserIdFromContext();
+
+        UserResponse user = userService.getUserProfile(uuid);
 
         var response = ApiResponse.<UserResponse>builder()
                 .code(200)

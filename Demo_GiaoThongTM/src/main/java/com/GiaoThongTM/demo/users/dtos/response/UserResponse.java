@@ -1,6 +1,7 @@
 package com.GiaoThongTM.demo.users.dtos.response;
 
 import com.GiaoThongTM.demo.bookings.dtos.response.BookingResponse;
+import com.GiaoThongTM.demo.users.enums.Role;
 import lombok.*;
 
 import java.util.List;
@@ -16,6 +17,6 @@ public class UserResponse {
     private UUID id;
     private String name;
     private String username;
-    private Set<RoleResponse> roles;
-    private List<BookingResponse> bookings;
+    private Set<Role> roles;
+//    private List<BookingResponse> bookings;
 }

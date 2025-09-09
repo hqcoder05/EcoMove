@@ -4,10 +4,10 @@ import com.GiaoThongTM.demo.commons.constants.PredefinedRole;
 import com.GiaoThongTM.demo.users.dtos.request.SignUp;
 import com.GiaoThongTM.demo.users.dtos.request.UserUpdateRequest;
 import com.GiaoThongTM.demo.users.dtos.response.UserResponse;
-import com.GiaoThongTM.demo.users.entities.Role;
 import com.GiaoThongTM.demo.users.entities.User;
 import com.GiaoThongTM.demo.commons.enums.ErrorCode;
 import com.GiaoThongTM.demo.commons.exceptions.AppException;
+import com.GiaoThongTM.demo.users.enums.Role;
 import com.GiaoThongTM.demo.users.mappers.UserMapper;
 import com.GiaoThongTM.demo.users.repositories.RoleRepository;
 import com.GiaoThongTM.demo.users.repositories.UserRepository;
@@ -18,7 +18,9 @@ import org.springframework.stereotype.Service;
 
 import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -30,20 +32,26 @@ public class UserService {
     private final UserMapper userMapper;
 
     public User createUser(SignUp request){
-        String username = request.getUsername();
+        String username = request.getUsername().toLowerCase();
+
+        String phoneNumber = request.getPhoneNumber();
 
         boolean existsByUsername = userRepository.existsByUsername(username);
 
-        if(existsByUsername){
+        boolean existsByPhoneNumber = userRepository.existsByPhoneNumber(phoneNumber);
+
+        if(existsByUsername || existsByPhoneNumber){
             throw new AppException(ErrorCode.USER_EXISTED);
         }
 
         User user = userMapper.toUser(request);
-        HashSet<Role> roles = new HashSet<>();
-        roleRepository.findById(PredefinedRole.USER_ROLE).ifPresent(roles::add);
-        user.setRoles(roles);
+        Set<Role> roles = new HashSet<>();
+        roles.add(Role.USER);
+        user.setRole(roles);
 
-        return userRepository.save(user);
+        User savedUser = userRepository.save(user);
+
+        return userRepository.save(savedUser);
     }
 
     public UserResponse getMyInfo(){
@@ -72,27 +80,25 @@ public class UserService {
         userRepository.delete(user);
     }
 
-    @PreAuthorize("hasAuthority('SCOPE_ADMIN')")
+//    @PreAuthorize("hasAuthority('SCOPE_ADMIN')")
     public void deleteUser(UUID userId){
         userRepository.deleteById(userId);
     }
 
-    @PreAuthorize("hasAuthority('SCOPE_ADMIN')")
+//    @PreAuthorize("hasAuthority('SCOPE_ADMIN')")
     public UserResponse updateUser(UUID userId, UserUpdateRequest updateRequest){
         User user = findByIdOrThrow(userId);
         userMapper.updateUser(user, updateRequest);
-        var roles = roleRepository.findAllById(updateRequest.getRoles());
-        user.setRoles(new HashSet<>(roles));
         return userMapper.toUserResponse(user);
     }
 
-    @PreAuthorize("hasAuthority('SCOPE_ADMIN')")
+//    @PreAuthorize("hasAuthority('SCOPE_ADMIN')")
     public UserResponse getUserProfile(UUID userId){
         User user = findByIdOrThrow(userId);
         return userMapper.toUserResponse(user);
     }
 
-    @PreAuthorize("hasAuthority('SCOPE_ADMIN')")
+//    @PreAuthorize("hasAuthority('SCOPE_ADMIN')")
     public List<UserResponse> getAllUsers(){
         return userRepository.findAll().stream().map(user -> userMapper.toUserResponse(user)).toList();
     }

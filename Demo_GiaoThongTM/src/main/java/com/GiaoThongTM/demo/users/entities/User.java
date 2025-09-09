@@ -1,6 +1,7 @@
 package com.GiaoThongTM.demo.users.entities;
 
 import com.GiaoThongTM.demo.bookings.entities.Booking;
+import com.GiaoThongTM.demo.users.enums.Role;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -30,9 +31,15 @@ public class User {
     @Column(unique = true, nullable = false)
     private String password;
 
-    @ManyToMany
-    private Set<Role> roles;
+    @Column(unique = true, nullable = false)
+    private String phoneNumber;
 
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
-    private List<Booking> bookings;
+//    @ManyToMany
+//    private Set<Role> roles;
+    @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
+    private Set<Role> role;
+
+//    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+//    private List<Booking> bookings;
 }

@@ -34,6 +34,13 @@ public class Booking {
     @Enumerated(EnumType.STRING)
     private BookingStatus status;
 
+    @Column(nullable = false)
+    private long totalPrice; // Tổng doanh thu
+
+    // Không bắt buộc, nhưng nếu bạn muốn tránh phải tính toán mỗi lần thì:
+    @Transient // Nếu không lưu DB mà chỉ muốn trả ra qua DTO
+    private long durationDays;
+
     @ManyToOne
     @JoinColumn(name = "user_id")
     private User user;

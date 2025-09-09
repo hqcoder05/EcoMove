@@ -18,6 +18,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.UUID;
 
@@ -71,11 +72,15 @@ public class BookingService {
 //            throw new AppException(ErrorCode.VEHICLE_INVALID);
 //        }
 
+        long days = ChronoUnit.DAYS.between(bookingRequest.getPickupTime(), bookingRequest.getReturnTime());
+
         Booking booking = bookingMapper.toBooking(bookingRequest);
         booking.setUser(user);
+        booking.setDurationDays(days);
         booking.setStatus(BookingStatus.Pending);
-        bookingRepository.save(booking);
-        return bookingMapper.toBookingResponse(booking);
+
+        Booking result = bookingRepository.save(booking);
+        return bookingMapper.toBookingResponse(result);
     }
 
     public BookingResponse getUserBooking(){

@@ -70,7 +70,7 @@ public class AuthService {
                 .issueTime(Date.from(now))
                 .expirationTime(Date.from(expiry))
                 .claim("userId", user.getId())
-                .claim("scope", buildScope(user))
+                .claim("roles", user.getRole())
                 .build();
         JWSObject jwsObject = new JWSObject(new JWSHeader(JWSAlgorithm.HS512), new Payload(claimSet.toJSONObject()));
         try{
@@ -157,15 +157,15 @@ public class AuthService {
         return signedJWT;
     }
 
-    private String buildScope(User user){
-        StringJoiner stringJoiner = new StringJoiner("");
-        if(!CollectionUtils.isEmpty(user.getRoles()))
-            user.getRoles().forEach(role -> {
-                    stringJoiner.add(role.getName());
-                    if(!CollectionUtils.isEmpty(role.getPermission())){
-                        role.getPermission().forEach(permission -> stringJoiner.add(permission.getName()));
-                    }
-            });
-        return stringJoiner.toString();
-    }
+//    private String buildScope(User user){
+//        StringJoiner stringJoiner = new StringJoiner("");
+//        if(!CollectionUtils.isEmpty(user.getRoles()))
+//            user.getRoles().forEach(role -> {
+//                    stringJoiner.add(role.getName());
+//                    if(!CollectionUtils.isEmpty(role.getPermission())){
+//                        role.getPermission().forEach(permission -> stringJoiner.add(permission.getName()));
+//                    }
+//            });
+//        return stringJoiner.toString();
+//    }
 }
