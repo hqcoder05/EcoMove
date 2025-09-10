@@ -1,0 +1,47 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap'); /* Tải font Inter */
+
+:root {
+  --primary-color: #0f5132; /* Màu nền chính */
+  --secondary-color: #175a3c; /* Màu phụ */
+  --text-dark: #0d3e28; /* Màu chữ tối */
+  --text-light: #e8f1eb; /* Màu chữ nhạt */
+  --space-sm: 0.5rem; /* Khoảng cách nhỏ */
+  --radius-md: 8px; /* Bo góc */
+}
+
+body {
+  margin: 0; /* Loại bỏ margin mặc định */
+  font-family: 'Inter', sans-serif; /* Font chữ */
+  line-height: 1.6; /* Chiều cao dòng */
+  color: var(--text-dark); /* Màu chữ */
+  background-color: var(--primary-color); /* Màu nền */
+}
+
+h1, h2 {
+  margin: 0; /* Loại bỏ margin */
+  font-weight: 600; /* Độ đậm */
+  color: var(--text-dark); /* Màu chữ */
+}
+
+input, button {
+  font-family: inherit; /* Kế thừa font từ cha */
+  font-size: inherit; /* Kế thừa kích thước chữ */
+  border-radius: var(--radius-md); /* Bo góc */
+  border: 1px solid #e5e7eb; /* Viền */
+  padding: 0.5rem; /* Padding */
+}
+
+input:focus {
+  border-color: var(--secondary-color); /* Màu viền khi focus */
+  outline: none; /* Loại bỏ viền focus mặc định */
+}
+
+button {
+  background-color: var(--secondary-color); /* Màu nền */
+  color: white; /* Màu chữ */
+  border: none; /* Loại bỏ viền */
+  cursor: pointer; /* Con trỏ chuột */
+}
+
+button:hover:not(:disabled) {
+  background-color: var(--text-dark); }/* Màu nền khi hover */

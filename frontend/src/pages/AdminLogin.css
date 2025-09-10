@@ -1,0 +1,102 @@
+/* Định nghĩa container chính của giao diện đăng nhập */
+.admin-login-container {
+  min-height: 100vh;
+  background-color: #0f5132;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 2rem;
+}
+
+/* Phong cách cho thẻ login-card */
+.login-card {
+  background: white;
+  padding: 2rem;
+  border-radius: 10px;
+  width: 100%;
+  max-width: 500px;
+  text-align: center;
+  border: 1px solid #d1d5db;
+}
+
+/* Phong cách header của login */
+.login-header {
+  margin-bottom: 1.5rem;
+}
+
+.login-header h1 {
+  color: black;
+  font-size: 2.5rem;
+}
+
+.login-header p {
+  color: black;
+  font-size: 1.2rem;
+  font-weight: bold;
+}
+
+/* Phong cách form */
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+  background: white;
+  padding: 2rem;
+  border-radius: 10px;
+}
+
+.form-group {
+  text-align: left;
+}
+
+.form-group label {
+  display: block;
+  color: black;
+  margin-bottom: 0.7rem;
+  font-size: 1rem;
+  font-weight: bold;
+}
+
+.form-group input {
+  width: 100%;
+  padding: 0.8rem;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  background-color: #ffffff;
+  color: #374151;
+  font-size: 1rem;
+}
+
+.login-button {
+  background-color: #013220;
+  color: white;
+  padding: 1rem;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 1.1rem;
+}
+
+.login-button:hover {
+  background-color: #1D2E28;
+}
+
+.login-button:disabled {
+  background-color: #d1d5db;
+  cursor: not-allowed;
+}
+
+.error-message {
+  color: #dc2626;
+  text-align: center;
+  font-size: 0.9rem;
+}
+
+/* Phong cách footer */
+.login-footer {
+  margin-top: 1.5rem;
+  color: black;
+  font-size: 0.9rem;
+  text-align: center;
+}

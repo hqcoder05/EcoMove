@@ -1,0 +1,275 @@
+/* Container chính chứa toàn bộ bảng booking */
+.booking-table {
+  padding: 10px;
+  font-family: Arial, sans-serif;
+}
+
+/* Phần bộ lọc và tìm kiếm ở đầu trang */
+.filter-section {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 15px;
+}
+
+/* Style cho các label trong bộ lọc */
+.filter-section label {
+  font-weight: bold;
+  margin-right: 5px;
+  color: #333;
+}
+
+/* Style chung cho input tìm kiếm và input date */
+.search-input,
+.filter-section input[type="date"] {
+  padding: 6px 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+/* Thiết lập độ rộng tối đa cho ô tìm kiếm */
+.search-input {
+  flex-grow: 1;
+  max-width: 200px;
+}
+
+/* Style cho nút lọc dữ liệu */
+.filter-btn {
+  padding: 6px 10px;
+  background-color: #14452f;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+/* Hiệu ứng hover cho nút lọc */
+.filter-btn:hover {
+  background-color: #0f3c28;
+}
+
+/* Container bao ngoài bảng để tạo scroll ngang */
+.table-wrapper {
+  overflow-x: auto;
+}
+
+/* Style chính cho bảng hiển thị dữ liệu */
+.booking-table-content {
+  width: 100%;
+  min-width: 950px;
+  border-collapse: collapse;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+/* Style cho từng dòng trong bảng */
+.table-row {
+  border-bottom: 1px solid #eee;
+}
+
+/* Style chung cho header và cell trong bảng */
+.booking-table-content th,
+.booking-table-content td {
+  padding: 10px;
+  text-align: center;
+  white-space: nowrap;
+}
+
+/* Style riêng cho header của bảng */
+.booking-table-content th {
+  background-color: #14452f; /* Màu xanh lá đậm */
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 12px;
+  color: #ffffff; /* Chữ màu trắng */
+}
+
+/* Style cho nội dung các cell */
+.booking-table-content td {
+  font-size: 14px;
+  color: #000000;
+}
+
+/* Đảm bảo cột Trạng thái giữ nguyên màu từ getStatusStyle */
+.booking-table-content td[data-label="Trạng thái"] {
+  color: initial;
+}
+
+/* Style mới cho trạng thái booking */
+.booking-status {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 15px;
+  font-weight: 600;
+  font-size: 11px;
+  text-align: center;
+  white-space: nowrap;
+  min-width: 80px;
+}
+
+/* Container và style cho modal popup */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+/* Nội dung chính của modal */
+.modal-content {
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  min-width: 320px;
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+/* Style cho tiêu đề trong modal */
+.modal-content h3 {
+  margin-top: 0;
+  margin-bottom: 15px;
+  color: #000000; /* Đổi thành màu đen */
+  text-align: center;
+}
+
+/* Style cho các đoạn thông tin trong modal */
+.modal-content p {
+  margin: 10px 0;
+  line-height: 1.5;
+  color: #000000; /* Đổi thành màu đen */
+}
+
+/* Đảm bảo cột Trạng thái trong modal giữ nguyên màu từ getStatusStyle */
+.modal-content p:has(.booking-status) {
+  color: #000000; /* Màu đen cho <strong>Trạng thái:</strong> */
+}
+
+/* Style chung cho các nút trong bảng */
+.detail-btn {
+  background-color: #6c757d;
+  color: white;
+  padding: 6px 12px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: background-color 0.2s;
+}
+
+.detail-btn:hover {
+  background-color: #5a6268;
+}
+
+/* Style riêng cho nút đóng modal */
+.modal-close-btn {
+  background-color: #6c757d;
+  color: white;
+  padding: 6px 12px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: background-color 0.2s;
+  margin-top: 15px;
+}
+
+.modal-close-btn:hover {
+  background-color: #5a6268;
+}
+
+/* Responsive design cho mobile và tablet */
+@media (max-width: 768px) {
+  .filter-section {
+    flex-direction: column;
+  }
+
+  .booking-table-content {
+    min-width: 0;
+    display: block;
+  }
+
+  .booking-table-content thead {
+    display: none;
+  }
+
+  .booking-table-content tbody,
+  .booking-table-content tr {
+    display: block;
+    width: 100%;
+    margin-bottom: 10px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background: white;
+  }
+
+  .booking-table-content td {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 12px;
+    border-bottom: 1px solid #eee;
+    text-align: left;
+    color: #000000;
+  }
+
+  .booking-table-content td[data-label="Trạng thái"] {
+    color: initial;
+  }
+
+  .booking-table-content td::before {
+    content: attr(data-label);
+    font-weight: bold;
+    margin-right: 10px;
+    min-width: 100px;
+    color: #333;
+  }
+
+  .booking-table-content td[data-label="STT"]::before { content: "STT: "; }
+  .booking-table-content td[data-label="SĐT"]::before { content: "SĐT: "; }
+  .booking-table-content td[data-label="Người dùng"]::before { content: "Người dùng: "; }
+  .booking-table-content td[data-label="Ngày bắt đầu"]::before { content: "Ngày bắt đầu: "; }
+  .booking-table-content td[data-label="Ngày kết thúc"]::before { content: "Ngày kết thúc: "; }
+  .booking-table-content td[data-label="Tên xe"]::before { content: "Tên xe: "; }
+  .booking-table-content td[data-label="Ngày"]::before { content: "Số ngày: "; }
+  .booking-table-content td[data-label="Doanh thu"]::before { content: "Doanh thu: "; }
+  .booking-table-content td[data-label="Trạng thái"]::before { content: "Trạng thái: "; }
+  .booking-table-content td[data-label="Hành động"]::before { content: "Hành động: "; }
+}
+
+/* Style cho phần phân trang */
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 15px;
+  gap: 10px;
+}
+
+.pagination-btn {
+  padding: 6px 12px;
+  background-color: #14452f;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.pagination-btn:disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
+}
+
+.pagination-btn:hover:not(:disabled) {
+  background-color: #0f3c28;
+}

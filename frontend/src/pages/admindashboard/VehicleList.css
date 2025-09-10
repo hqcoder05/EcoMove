@@ -1,0 +1,381 @@
+/* Container chính của danh sách xe */
+.station-list {
+  padding: var(--space-sm); /* Khoảng cách viền */
+  background: #ffffff; /* Màu nền trắng */
+  min-height: 100vh; /* Chiều cao tối thiểu toàn màn hình */
+}
+
+/* Header chứa tiêu đề và nút thêm xe */
+.list-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.title-black {
+  font-size: 1.8rem;
+  color: #000000; /* Màu đen cho tiêu đề danh sách */
+  margin: 0;
+  font-weight: 600;
+}
+
+.add-btn {
+  background: #2E7D32; /* Màu xanh lá cho nút thêm */
+  color: white;
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  transition: all 0.3s ease;
+}
+
+.add-btn:hover {
+  background: #1A4D23; /* Màu xanh đậm khi hover */
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(46, 125, 50, 0.3);
+}
+
+/* Lưới hiển thị danh sách xe */
+.vehicle-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr); /* 3 cột trên desktop */
+  gap: 1rem;
+}
+
+/* Card hiển thị thông tin mỗi xe */
+.vehicle-card {
+  background: #E6F3FA; /* Màu nền xanh nhạt */
+  border-radius: var(--radius-md); /* Bo góc */
+  padding: 1rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease;
+}
+
+.vehicle-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Container cho ảnh và trạng thái */
+.image-container {
+  position: relative;
+  margin-bottom: 1rem;
+  min-height: 180px;
+}
+
+.vehicle-image {
+  width: 100%;
+  height: 180px;
+  border-radius: var(--radius-md);
+  object-fit: cover;
+}
+
+.vehicle-image[src="https://via.placeholder.com/180"] {
+  opacity: 0.7;
+  filter: grayscale(100%); /* Hiệu ứng khi ảnh lỗi */
+}
+
+.status-badge {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: white; /* Màu chữ trắng cho trạng thái */
+}
+
+.status-available { background-color: #28a745; } /* Xanh lá */
+.status-rented { background-color: #dc3545; } /* Đỏ */
+.status-maintenance { background-color: #ffc107; } /* Vàng */
+
+/* Thẻ bo góc chứa thông tin tên xe và giá thuê */
+.vehicle-info-box {
+  display: flex;
+  justify-content: center; /* Căn giữa theo chiều ngang */
+  align-items: center; /* Căn giữa theo chiều dọc */
+  background: #ffffff; /* Nền màu trắng */
+  padding: 0.3rem 0.8rem; /* Giảm padding để vừa vặn */
+  border-radius: 30px; /* Tăng độ bo góc lên 30px để cong hơn */
+  margin-bottom: 0.5rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Đổ bóng nhẹ */
+  max-width: 90%; /* Giới hạn chiều rộng để vừa vặn */
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* Nội dung trong thẻ bo góc, ngăn xuống dòng */
+.vehicle-info-content {
+  display: flex;
+  flex-direction: column; /* Sắp xếp theo cột (Tên xe trên, Giá thuê dưới) */
+  align-items: center; /* Căn giữa các phần tử */
+  text-align: center; /* Căn giữa văn bản */
+  white-space: nowrap; /* Ngăn xuống dòng */
+  gap: 0.1rem; /* Giảm khoảng cách giữa Tên xe và Giá thuê */
+}
+
+.vehicle-name-black {
+  font-size: 1.1rem;
+  color: #000000; /* Màu đen */
+  margin: 0;
+  font-weight: 600;
+}
+
+/* Nhóm giá thuê để căn chỉnh */
+.price-info {
+  display: flex;
+  align-items: center;
+  gap: 0.1rem; /* Khoảng cách nhỏ giữa các phần */
+}
+
+.price-label-black, .price-unit-black {
+  color: #000000; /* Màu đen, không tô đậm */
+  font-weight: normal; /* Bỏ tô đậm */
+  font-size: 0.9rem; /* Giảm font-size để vừa vặn */
+}
+
+.price-black {
+  font-size: 1rem; /* Giảm font-size để vừa vặn */
+  font-weight: 700;
+  color: #000000; /* Màu đen */
+  margin: 0 0.1rem;
+}
+
+/* Thông tin chi tiết xe, căn lề trái */
+.vehicle-details {
+  text-align: left; /* Căn lề trái cho toàn bộ thông tin */
+  margin: 0.5rem 0;
+}
+
+.vehicle-details p {
+  color: #000000; /* Màu đen cho thông tin */
+  margin: 0.25rem 0;
+  text-align: left; /* Đảm bảo căn lề trái */
+}
+
+.detail-label {
+  font-weight: 600;
+  color: #000000; /* Màu đen cho nhãn */
+  margin-right: 0.5rem;
+}
+
+/* Nút chỉnh sửa và xóa */
+.vehicle-actions {
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.btn-edit, .btn-delete {
+  background: #ffffff;
+  color: #000000;
+  padding: 0.5rem 1rem;
+  border: 2px solid #000000;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  transition: all 0.3s ease;
+}
+
+.btn-edit:hover {
+  background: #000000;
+  color: #ffffff;
+}
+
+.btn-delete:hover {
+  background: #dc3545;
+  color: #ffffff;
+  border-color: #dc3545;
+}
+
+/* Modal thêm/sửa xe */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal-content-improved {
+  background: #ffffff;
+  border-radius: var(--radius-md);
+  padding: 1.5rem;
+  width: 90vw;
+  max-width: 450px; /* Kích thước vừa vặn trên desktop */
+  max-height: 80vh; /* Giới hạn chiều cao */
+  overflow-y: auto;
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+}
+
+/* Header của modal */
+.modal-header-improved {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  border-bottom: 2px solid #f0f0f0;
+  padding-bottom: 0.75rem;
+}
+
+.modal-title {
+  font-size: 1.4rem;
+  color: #000000; /* Màu đen cho tiêu đề modal */
+  margin: 0;
+  font-weight: 600;
+}
+
+.close-btn-improved {
+  background: none;
+  border: none;
+  font-size: 1.2rem;
+  cursor: pointer;
+  color: #495057;
+  transition: color 0.3s ease;
+}
+
+.close-btn-improved:hover {
+  color: #dc3545;
+}
+
+/* Form thêm/sửa */
+.station-form-improved {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.form-section {
+  margin-bottom: 1rem;
+}
+
+.section-title {
+  font-size: 1.1rem;
+  color: #000000; /* Màu đen cho tiêu đề phần */
+  margin: 0 0 0.5rem;
+  font-weight: 600;
+}
+
+.form-row {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.form-group-improved {
+  flex: 1;
+  min-width: 200px; /* Phù hợp modal nhỏ hơn */
+}
+
+.label-improved {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: #000000; /* Màu đen cho nhãn */
+  font-size: 0.9rem;
+}
+
+.required {
+  color: #dc3545;
+  font-weight: bold;
+}
+
+.input-improved, .select-improved {
+  width: 100%;
+  padding: 0.6rem 0.8rem;
+  border: 2px solid #e9ecef;
+  border-radius: var(--radius-md);
+  font-size: 0.9rem;
+  transition: all 0.3s ease;
+  background: white;
+  box-sizing: border-box;
+}
+
+.input-improved:focus, .select-improved:focus {
+  outline: none;
+  border-color: #007bff;
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+}
+
+.select-improved:hover {
+  border-color: #adb5bd;
+}
+
+/* Nút form */
+.form-actions-improved {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 2px solid #f0f0f0;
+}
+
+.btn-cancel-improved, .btn-submit-improved {
+  padding: 0.6rem 1.2rem;
+  border: none;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  min-width: 100px;
+  text-align: center;
+}
+
+.btn-cancel-improved {
+  background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%);
+  color: white;
+}
+
+.btn-cancel-improved:hover {
+  background: linear-gradient(135deg, #5a6268 0%, #495057 100%);
+  transform: translateY(-2px);
+}
+
+.btn-submit-improved {
+  background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+  color: white;
+  font-weight: 600;
+}
+
+.btn-submit-improved:hover {
+  background: linear-gradient(135deg, #218838 0%, #1e7e34 100%);
+  transform: translateY(-2px);
+}
+
+/* Responsive cho mobile */
+@media (max-width: 768px) {
+  .vehicle-grid {
+    grid-template-columns: 1fr; /* 1 cột trên mobile */
+  }
+  .list-header {
+    flex-direction: column;
+    text-align: center;
+  }
+  .modal-content-improved {
+    width: 95vw;
+    max-width: 400px; /* Kích thước nhỏ hơn trên mobile */
+  }
+  .form-group-improved {
+    min-width: 100%;
+  }
+}
