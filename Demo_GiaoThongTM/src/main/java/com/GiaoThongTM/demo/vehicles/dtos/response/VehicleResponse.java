@@ -3,7 +3,11 @@ package com.GiaoThongTM.demo.vehicles.dtos.response;
 import lombok.*;
 import java.util.UUID;
 
-@Setter @Getter @NoArgsConstructor @AllArgsConstructor @Builder
+@Setter
+@Getter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class VehicleResponse {
     // Trả đúng shape UI mong đợi
     private UUID id;

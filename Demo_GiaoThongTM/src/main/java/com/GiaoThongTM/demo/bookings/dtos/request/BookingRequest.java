@@ -13,9 +13,12 @@ import java.util.UUID;
 @AllArgsConstructor
 @Builder
 public class BookingRequest {
-    private UUID pickupStationId;
-    private UUID returnStationId;
+    private String fullName;
+    private String phoneNumber;
+    private String email;
     private LocalDate pickupTime;
     private LocalDate returnTime;
+    private String pickupArea;
+    private String returnArea;
     private UUID vehicleTypeId;
 }

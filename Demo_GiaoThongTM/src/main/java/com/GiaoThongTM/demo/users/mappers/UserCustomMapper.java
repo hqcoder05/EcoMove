@@ -18,6 +18,7 @@ public class UserCustomMapper {
         user.setUsername(request.getUsername());
         user.setPassword(request.getPassword());
         user.setName(request.getName());
+        user.setEmail(request.getEmail());
         user.setPhoneNumber(request.getPhoneNumber());
         user.setRole(new HashSet<>(Set.of(Role.USER)));
 
@@ -33,7 +34,8 @@ public class UserCustomMapper {
         userResponse.setId(user.getId());
         userResponse.setUsername(user.getUsername());
         userResponse.setName(user.getName());
-        user.setRole(user.getRole());
+        userResponse.setEmail(user.getEmail());
+        userResponse.setRoles(user.getRole());
 
         return userResponse;
     }
@@ -53,6 +55,9 @@ public class UserCustomMapper {
         }
         if(request.getFullName() != null){
             user.setName(request.getFullName());
+        }
+        if(request.getEmail() != null){
+            user.setEmail(request.getEmail());
         }
     }
 }

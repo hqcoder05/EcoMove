@@ -1,27 +1,19 @@
 package com.GiaoThongTM.demo.users.services;
 
-import com.GiaoThongTM.demo.commons.constants.PredefinedRole;
 import com.GiaoThongTM.demo.users.dtos.request.SignUp;
 import com.GiaoThongTM.demo.users.dtos.request.UserUpdateRequest;
 import com.GiaoThongTM.demo.users.dtos.response.UserResponse;
 import com.GiaoThongTM.demo.users.entities.User;
 import com.GiaoThongTM.demo.commons.enums.ErrorCode;
 import com.GiaoThongTM.demo.commons.exceptions.AppException;
-import com.GiaoThongTM.demo.users.enums.Role;
 import com.GiaoThongTM.demo.users.mappers.UserCustomMapper;
-import com.GiaoThongTM.demo.users.mappers.UserMapper;
-import com.GiaoThongTM.demo.users.repositories.RoleRepository;
 import com.GiaoThongTM.demo.users.repositories.UserRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -39,7 +31,9 @@ public class UserService {
 
         boolean existsByPhoneNumber = userRepository.existsByPhoneNumber(phoneNumber);
 
-        if(existsByUsername || existsByPhoneNumber){
+        boolean existsByEmail = userRepository.existsByEmail(username);
+
+        if(existsByUsername || existsByPhoneNumber  || existsByEmail){
             throw new AppException(ErrorCode.USER_EXISTED);
         }
 

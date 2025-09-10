@@ -25,6 +25,7 @@ public enum ErrorCode {
     UNAUTHORIZED(HttpStatus.BAD_REQUEST.value(), "Bạn không có đủ thẩm quyền"),
     INVALID_PICKUPTIME(HttpStatus.BAD_REQUEST.value(), "Thời gian đăt phải lớn hơn hoăc bằng thời điểm hiện tại"),
     INVALID_RETURNTIME(HttpStatus.BAD_REQUEST.value(), "Thời gian trả xe không thể lớn hơn thời gian đặt xe"),
+    VEHICLE_NOT_FOUND(HttpStatus.BAD_REQUEST.value(), "Không tìm thấy loại phương tiện này!"),
     USERNAME_INVALID(HttpStatus.BAD_REQUEST.value(), "Tên tài khoản không hợp lệ");
 
 

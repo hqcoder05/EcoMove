@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -14,4 +15,5 @@ import java.util.UUID;
 public interface BookingRepository extends JpaRepository<Booking, UUID> {
     boolean existsByUserAndStatusIn(User user, Collection<BookingStatus> statuses);
     Optional<Booking> findByUserAndStatusIn(User user, Collection<BookingStatus> statuses);
+    List<Booking> findAllByUserAndStatusIn(User user, List<BookingStatus> statuses);
 }

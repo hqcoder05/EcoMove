@@ -34,6 +34,7 @@ public class ApplicationInitConfig {
                         .username(ADMIN_USER_NAME)
                         .name("Admin")
                         .role(roles)
+                        .email("DevHoag@gmail.com")
                         .phoneNumber("023869789")
                         .password(ADMIN_PASSWORD)
                         .build();

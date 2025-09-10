@@ -6,6 +6,7 @@ import com.GiaoThongTM.demo.bookings.dtos.request.CancelBookingRequest;
 import com.GiaoThongTM.demo.commons.dtos.ApiResponse;
 import com.GiaoThongTM.demo.bookings.dtos.response.BookingResponse;
 import com.GiaoThongTM.demo.bookings.services.BookingService;
+import com.GiaoThongTM.demo.commons.utils.AuthUtil;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -31,10 +32,13 @@ public class BookingController {
         return ResponseEntity.status(response.getCode()).body(response);
     }
 
-    @GetMapping("/get-user-booking")
-    public ResponseEntity<ApiResponse<BookingResponse>> getUserBooking() {
-        BookingResponse bookingResponse = bookingService.getUserBooking();
-        var response = ApiResponse.<BookingResponse>builder()
+    @GetMapping("/get-all-user-booking")
+    public ResponseEntity<ApiResponse<List<BookingResponse>>> getUserBooking() {
+        UUID uuid = AuthUtil.getUserIdFromContext();
+
+        List<BookingResponse> bookingResponse = bookingService.getUserBookingById(uuid);
+
+        var response = ApiResponse.<List<BookingResponse>>builder()
                 .code(200)
                 .message("Lấy thông tin lịch sử đặt xe thành công")
                 .result(bookingResponse)

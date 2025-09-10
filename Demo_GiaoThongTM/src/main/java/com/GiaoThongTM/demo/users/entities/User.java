@@ -35,6 +35,9 @@ public class User {
     @Column(unique = true, nullable = false)
     private String phoneNumber;
 
+    @Column(unique = true, nullable = false)
+    private String email;
+
 //    @ManyToMany
 //    private Set<Role> roles;
     @Column(nullable = false)
