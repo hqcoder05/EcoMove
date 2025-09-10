@@ -1,6 +1,5 @@
 package com.GiaoThongTM.demo.commons.configuration;
 
-import com.GiaoThongTM.demo.commons.constants.PredefinedRole;
 import com.GiaoThongTM.demo.users.entities.User;
 import com.GiaoThongTM.demo.users.enums.Role;
 import com.GiaoThongTM.demo.users.repositories.UserRepository;

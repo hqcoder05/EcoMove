@@ -1,12 +1,9 @@
 package com.GiaoThongTM.demo.users.entities;
 
-import com.GiaoThongTM.demo.bookings.entities.Booking;
 import com.GiaoThongTM.demo.users.enums.Role;
-import com.GiaoThongTM.demo.vehicles.entities.Vehicle;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 

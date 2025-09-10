@@ -35,7 +35,7 @@ public class BookingService {
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
         boolean exists = bookingRepository.existsByUserAndStatusIn(
                 user,
-                List.of(BookingStatus.PENDING, BookingStatus.CONFIRMED)
+                List.of(BookingStatus.Pending, BookingStatus.Confirmed)
         );
 
         if (exists) {
@@ -187,7 +187,7 @@ public class BookingService {
     }
 
     @PreAuthorize("hasAuthority('SCOPE_ADMIN')")
-    public void confirmedBooking(UUID bookingId) {
+    public void ConfirmedBooking(UUID bookingId) {
         Booking booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new AppException(ErrorCode.BOOKING_INVALID));
 
