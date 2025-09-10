@@ -1,36 +1,38 @@
 from fastapi import APIRouter
 from pydantic import BaseModel
-from typing import List, Dict
+from typing import List, Dict, Optional
 from model.suggest_station import suggest_nearby_station
 
 router = APIRouter()
 
+class Vehicle(BaseModel):
+    battery_percent: float
+    battery_capacity_kwh: float
+    charge_rate_kw: float
+
 class StationData(BaseModel):
     station_id: str
-    available_slots: int
+    lat: float
+    lon: float
     total_slots: int
-    distance_km: float
-    charging_vehicles: List[Dict] = []
+    available_slots: int
+    charging_vehicles: Optional[List[Vehicle]] = []
 
 class SuggestRequest(BaseModel):
-    current_station: str
+    user_location: Dict[str, float]   # {"lat": float, "lon": float}
     stations_data: List[StationData]
-    speed_kmph: float = 30.0  # default average speed in km/h
-    max_acceptable_time: float = 45.0  # in minutes
-    slot_occupancy_threshold: float = 0.8  # percentage, e.g., 0.8 = 80%
+    speed_kmph: float = 30.0
+    max_distance_km: float = 15.0
+    slot_occupancy_threshold: float = 0.8
 
 @router.post("/suggest")
 async def suggest_station(request: SuggestRequest):
-    """
-    Suggest an optimal charging station based on current station and stations data.
-    The selection avoids stations that are too full or too far.
-    """
     try:
         result = suggest_nearby_station(
-            current_station=request.current_station,
+            user_location=request.user_location,
             stations_data=[s.dict() for s in request.stations_data],
             speed_kmph=request.speed_kmph,
-            max_acceptable_time=request.max_acceptable_time,
+            max_distance_km=request.max_distance_km,
             slot_occupancy_threshold=request.slot_occupancy_threshold
         )
         return result
