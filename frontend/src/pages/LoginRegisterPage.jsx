@@ -1,211 +1,235 @@
+
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import carImage from './assets/vinfast8.jpg'; 
 
-export default function LoginRegisterPage() {
-  const [tab, setTab] = useState("login");
-  const [phone, setPhone] = useState("");
+export default function SignUpForm() {
   const navigate = useNavigate();
+  const [formData, setFormData] = useState({
+    username: "",
+    name: "",
+    phoneNumber: "",
+    email: "",
+    password: "",
+  });
+  const [showPassword, setShowPassword] = useState(false);
 
-  const handleLogin = (role = "user") => {
-    localStorage.setItem("isLoggedIn", "true");
-    localStorage.setItem("userRole", role);
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData({ ...formData, [name]: value });
+  };
 
-    if (role === "admin") {
-      navigate("/admin");
-    } else {
-      navigate("/dashboard");
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try{
+      const response = await fetch("http://localhost:8080/api/auth/sign-up", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(formData),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        if (data.result && data.result.token) {
+          localStorage.setItem("token", data.result.token);
+        }
+
+        alert("Đăng ký thành công!");
+        window.location.href = "/dashboard";;
+      }
+      else{
+        const errorData = await response.json();
+        alert("Lỗi đăng ký: " + errorData.message);
+      }
+    } catch (error) {
+      console.error("Lỗi khi kết nối backend:", error);
+      alert("Lỗi kết nối server");
     }
+    // navigate("/dashboard");
   };
 
   return (
-    <div className="auth-bg">
+    <div className="signup-wrapper">
       <style>{`
-        .auth-bg {
+        body {
+          margin: 0;
+          font-family: 'Segoe UI', sans-serif;
+        }
+
+        .signup-wrapper {
           min-height: 100vh;
-          background: linear-gradient(135deg, #ff8000 60%, #3ec6f3 100%);
+          background: linear-gradient(to right, #2d7a2d, #1e5e1e);
           display: flex;
           align-items: center;
           justify-content: center;
         }
 
-        .auth-container {
-          display: flex;
-          background: #fff;
-          border-radius: 18px;
-          box-shadow: 0 2px 16px rgba(0,0,0,0.08);
+        .signup-box {
+          background: white;
+          padding: 40px 48px;
+          border-radius: 16px;
+          box-shadow: 0 8px 24px rgba(0,0,0,0.15);
           width: 100%;
-          max-width: 900px;
-          overflow: hidden;
-        }
-
-        .auth-left {
-          flex: 1;
-          padding: 32px 24px 24px 24px;
-          box-sizing: border-box;
-        }
-
-        .auth-right {
-          flex: 1;
-          background: url(${carImage}) center/cover no-repeat;
-        }
-
-        .auth-tabs {
-          display: flex;
-          gap: 24px;
-          margin-bottom: 0;
-        }
-        .auth-tabs button {
-          background: none;
-          border: none;
-          font-size: 1.2rem;
-          font-weight: 600;
-          color: #888;
-          cursor: pointer;
-          padding: 0 0 8px 0;
-          outline: none;
-        }
-        .auth-tabs .active {
-          color: #222;
-        }
-        .auth-tab-underline {
-          height: 2px;
-          background: #eee;
-          margin-bottom: 24px;
+          max-width: 550px;
           position: relative;
         }
-        .underline {
+
+        .back-button {
           position: absolute;
-          bottom: 0;
-          height: 2px;
-          width: 50%;
-          background: #ff8000;
-          transition: left 0.2s;
+          left: 24px;
+          top: 24px;
+          font-size: 20px;
+          background: none;
+          border: none;
+          cursor: pointer;
+          color: #2e7d32;
         }
-        .underline.login { left: 0; }
-        .underline.register { left: 50%; }
-        .auth-form {
+
+        .signup-box h2 {
+          text-align: center;
+          color: #2e7d32;
+          margin-bottom: 32px;
+        }
+
+        .form-group {
           display: flex;
           flex-direction: column;
-          gap: 16px;
+          align-items: flex-start;
+          margin-bottom: 18px;
         }
-        .auth-form input {
+
+        .form-label {
+          font-weight: 600;
+          margin-bottom: 6px;
+          color: #2e7d32;
+        }
+
+        .form-control {
+          width: 100%;
           padding: 12px;
-          border: 1px solid #ddd;
-          border-radius: 6px;
-          font-size: 1rem;
+          border: 1px solid #ccc;
+          border-radius: 8px;
+          font-size: 16px;
         }
-        .auth-btn {
-          background: #ff8000;
-          color: #fff;
+
+        .password-wrapper {
+          position: relative;
+          width: 100%;
+        }
+
+        .toggle-password {
+          position: absolute;
+          right: 12px;
+          top: 50%;
+          transform: translateY(-50%);
+          background: none;
           border: none;
-          border-radius: 6px;
-          padding: 12px;
-          font-size: 1.1rem;
+          font-size: 18px;
+          cursor: pointer;
+        }
+
+        .submit-btn {
+          width: 100%;
+          padding: 14px;
+          background-color: #2e7d32;
+          color: white;
+          border: none;
+          border-radius: 8px;
+          font-size: 16px;
           font-weight: 600;
           cursor: pointer;
-          margin-bottom: 8px;
+          margin-top: 8px;
         }
-        .auth-or {
-          text-align: center;
-          color: #888;
-          margin: 16px 0 8px 0;
-          font-size: 1rem;
-        }
-        .auth-social {
-          width: 100%;
-          display: flex;
-          align-items: center;
-          background: #f5f5f5;
-          border: none;
-          border-radius: 6px;
-          padding: 10px 0;
-          font-size: 1rem;
-          font-weight: 500;
-          margin-bottom: 10px;
-          cursor: pointer;
-          justify-content: center;
-        }
-        .auth-social.fb { color: #1877f3; }
-        .auth-social.gg { color: #ea4335; }
 
-        /* --- Responsive cho Mobile --- */
-        @media (max-width: 768px) {
-          .auth-container {
-            flex-direction: column;
-            max-width: 98vw;
-          }
-          .auth-right {
-            display: none;
-          }
-          .auth-left {
-            padding: 24px 12px 24px 12px;
+        @media (max-width: 480px) {
+          .signup-box {
+            padding: 24px 16px;
           }
         }
       `}</style>
 
-      <div className="auth-container">
-        <div className="auth-left">
-          <img
-            src="https://static.ahamove.com/logo_full.svg"
-            alt="Ahamove"
-            style={{ width: 180, margin: "0 auto 24px", display: "block" }}
+      <form className="signup-box" onSubmit={handleSubmit}>
+        <button className="back-button" onClick={() => navigate(-1)} type="button">←</button>
+        <h2>Đăng ký</h2>
+
+        <div className="form-group">
+          <label className="form-label">Số điện thoại của bạn?</label>
+          <input
+            type="tel"
+            name="phoneNumber"
+            className="form-control"
+            placeholder="+84 Nhập số điện thoại"
+            value={formData.phoneNumber}
+            onChange={handleChange}
+            required
           />
-          <div className="auth-tabs">
-            <button
-              className={tab === "login" ? "active" : ""}
-              onClick={() => setTab("login")}
-            >
-              Đăng nhập
-            </button>
-            <button
-              className={tab === "register" ? "active" : ""}
-              onClick={() => setTab("register")}
-            >
-              Đăng ký
-            </button>
-          </div>
-          <div className="auth-tab-underline">
-            <div className={tab === "login" ? "underline login" : "underline register"} />
-          </div>
-          <form className="auth-form" onSubmit={e => e.preventDefault()}>
+        </div>
+
+        <div className="form-group">
+          <label className="form-label">Email của bạn?</label>
+          <input
+            type="email"
+            name="email"
+            className="form-control"
+            placeholder="Nhập email của bạn (*)"
+            value={formData.email}
+            onChange={handleChange}
+            required
+          />
+        </div>
+
+        <div className="form-group">
+          <label className="form-label">Tên đầy đủ</label>
+          <input
+            type="text"
+            name="name"
+            className="form-control"
+            placeholder="Nhập họ và tên"
+            value={formData.name}
+            onChange={handleChange}
+          />
+        </div>
+
+        <div className="form-group">
+          <label className="form-label">Tên đăng nhập</label>
+          <input
+            type="text"
+            name="username"
+            className="form-control"
+            placeholder="Nhập tên tài khoản"
+            value={formData.username}
+            onChange={handleChange}
+            required
+          />
+        </div>
+
+        <div className="form-group">
+          <label className="form-label">Mật khẩu (*)</label>
+          <div className="password-wrapper">
             <input
-              type="tel"
-              placeholder="Nhập số điện thoại"
-              value={phone}
-              onChange={e => setPhone(e.target.value)}
+              type={showPassword ? "text" : "password"}
+              name="password"
+              className="form-control"
+              placeholder="Nhập mật khẩu (*)"
+              value={formData.password}
+              onChange={handleChange}
               required
             />
             <button
-              className="auth-btn"
-              type="submit"
-              onClick={() => handleLogin("user")}
+              type="button"
+              className="toggle-password"
+              onClick={() => setShowPassword(!showPassword)}
             >
-              {tab === "login" ? "Đăng nhập" : "Đăng ký"}
+              {showPassword ? "🙈" : "👁️"}
             </button>
-          </form>
-
-          <div className="auth-or">Hoặc</div>
-          <button className="auth-social fb">
-            <img src="https://cdn-icons-png.flaticon.com/512/124/124010.png" alt="" width={20} style={{marginRight:8}} />
-            Đăng nhập với Facebook
-          </button>
-          <button className="auth-social gg">
-            <img src="https://cdn-icons-png.flaticon.com/512/281/281764.png" alt="" width={20} style={{marginRight:8}} />
-            Đăng nhập với Google
-          </button>
-
-          <button
-            style={{ marginTop: 12, background: "#1976d2", color: "#fff", padding: "10px", borderRadius: 6 }}
-            onClick={() => handleLogin("./pages/AdminLogin")}
-          >
-            🔑 Đăng nhập Admin (test)
-          </button>
+          </div>
         </div>
 
-        {/* Cột ảnh xe */}
-        <div className="auth-right"></div>
-      </div>
+        <button type="submit" className="submit-btn">Đăng ký</button>
+      </form>
     </div>
   );
 }
+

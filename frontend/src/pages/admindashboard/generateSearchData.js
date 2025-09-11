@@ -1,4 +1,4 @@
-import { stationsData } from './stationData.js';
+import { stationsData } from './StationData.js';
 import fs from 'fs';
 
 function generateRandomUsername() {

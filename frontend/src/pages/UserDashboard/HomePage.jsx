@@ -1,16 +1,41 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { FaCar, FaChargingStation, FaUser } from "react-icons/fa";
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { FaBolt } from 'react-icons/fa';
 import '../admindashboard/AdminNavbar.css';
 
 const HomePage = () => {
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    try {
+      const token = localStorage.getItem("token");
+
+      // Gọi API logout nếu có (bạn có thể bỏ nếu không cần)
+      await fetch("http://localhost:8080/api/auth/sign-out", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      // Xóa token
+      localStorage.removeItem("token");
+      window.location.href = "/login";
+    } catch (error) {
+      console.error("Lỗi đăng xuất:", error);
+      alert("Không thể đăng xuất. Vui lòng thử lại.");
+    }
+  };
+
   return (
     <div className="homepage">
       <style>{`
         .homepage {
           font-family: 'Segoe UI', sans-serif;
-          background: #28a745;
+          background: #fff;
           min-height: 100vh;
           display: flex;
           flex-direction: column;
@@ -100,12 +125,12 @@ const HomePage = () => {
           <h2><FaBolt style={{ marginRight: '8px', color: '#fbc02d' }} />EcoMove</h2>
         </div>
         <div className="navbar-menu">
-          <Link to="/" className="menu-item">Trang Chủ</Link>
-          <Link to="/dashboard" className="menu-item">Đặt Xe</Link>
-          <Link to="/map" className="menu-item">Tìm Trạc Sạc</Link>
+          <Link to="/" className="menu-item">Trang chủ</Link>
+          <Link to="/dashboard" className="menu-item">Thuê xe</Link>
+          <Link to="/map" className="menu-item">Gợi ý trạm sạc</Link>
         </div>
         <div className="navbar-user">
-          <Link to="/login" className="logout-btn">Đăng nhập</Link>
+          <button className="logout-btn" onClick={handleLogout}>Đăng xuất</button>
         </div>
       </nav>
 
@@ -122,12 +147,12 @@ const HomePage = () => {
       <div className="features">
         <div className="feature-card">
           <FaCar size={40} color="#14452F" />
-          <h3>Đặt xe điện</h3>
+          <h3>Thuê xe điện</h3>
           <p>Lựa chọn xe máy điện hoặc ô tô điện phù hợp với nhu cầu của bạn.</p>
         </div>
         <div className="feature-card">
           <FaChargingStation size={40} color="#14452F" />
-          <h3>Tìm trạm sạc</h3>
+          <h3>Gợi ý trạm sạc</h3>
           <p>Xem vị trí trạm sạc gần bạn và theo dõi số chỗ trống còn lại.</p>
         </div>
         <div className="feature-card">

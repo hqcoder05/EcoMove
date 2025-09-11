@@ -1,58 +1,139 @@
-import React, { useState, useEffect } from 'react';
+// src/pages/StationList.jsx
+import React, { useEffect, useMemo, useState } from 'react';
 import { Edit, Trash2, Plus } from 'lucide-react';
-import { stationsData, STATUS_CONFIG, STATUS_OPTIONS } from './stationData.js';
+import { STATUS_CONFIG, STATUS_OPTIONS } from './stationData.js';
 import './StationList.css';
 
-// Sao chép dữ liệu để tránh mutate dữ liệu gốc
-let mockStations = [...stationsData];
+// =============== Cấu hình API ===============
+const API_BASE = 'http://localhost:8080/api'; // khớp application.yml (context-path: /api)
+const STATION_URL = `${API_BASE}/stations`;
 
-// API đơn giản để quản lý trạm sạc
-const stationAPI = {
-  getAll: () => mockStations,
-  create: data => {
-    const maxId = Math.max(...mockStations.map(s => s.id), 0);
-    mockStations.push({ id: maxId + 1, ...data });
-  },
-  update: (id, data) => {
-    const idx = mockStations.findIndex(s => s.id === id);
-    if (idx >= 0) mockStations[idx] = { ...mockStations[idx], ...data };
-  },
-  delete: id => mockStations = mockStations.filter(s => s.id !== id)
+// =============== Helpers chung ===============
+const toInt = (v) => {
+  if (v == null || v === '') return null;
+  const n = Number(String(v).replace(/[^\d\-]/g, ''));
+  return Number.isFinite(n) ? n : null;
+};
+const toFloat = (v) => {
+  if (v == null || v === '') return null;
+  const n = Number(String(v).replace(/[^0-9.\-]/g, ''));
+  return Number.isFinite(n) ? n : null;
+};
+const fmtCoord = (v) => (Number.isFinite(v) ? v.toFixed(6) : '-');
+
+// Map EN⇄VI cho status
+const API_TO_UI_STATUS = {
+  ACTIVE: 'Hoạt động',
+  MAINTENANCE: 'Bảo trì',
+  FULL: 'Đầy chỗ',
+  INACTIVE: 'Tạm dừng',
+};
+const UI_TO_API_STATUS = {
+  'Hoạt động': 'ACTIVE',
+  'Bảo trì': 'MAINTENANCE',
+  'Đầy chỗ': 'FULL',
+  'Tạm dừng': 'INACTIVE',
 };
 
-// Component hiển thị trạng thái trạm sạc
+// Map entity từ BE -> UI row (ÉP SỐ cho lat/lon)
+const mapStationFromApi = (r) => {
+  const lat = r.lat ?? r.latitude ?? null;
+  const lon = r.lon ?? r.longitude ?? null;
+  return {
+    id: r.stationId || r.id || r.uuid,                 // UUID dùng nội bộ (không hiển thị)
+    name: r.stationName ?? r.name ?? '',
+    address: r.address ?? '',
+    capacity: r.totalSlots ?? r.capacity ?? 0,
+    status: API_TO_UI_STATUS[r.status] || r.status || 'Hoạt động',
+    latitude: lat != null ? Number(lat) : null,        // number | null
+    longitude: lon != null ? Number(lon) : null,       // number | null
+    availableSlots: r.availableSlots ?? null,
+  };
+};
+
+// Map dữ liệu form -> payload gửi BE (ĐÚNG key BE)
+const mapFormToRequest = (f, editingRow) => {
+  const total = toInt(f.capacity);
+  const available = editingRow?.availableSlots != null ? editingRow.availableSlots : total;
+  return {
+    stationName: f.name?.trim() ?? '',
+    address: f.address?.trim() ?? '',
+    totalSlots: total,
+    availableSlots: available,
+    status: UI_TO_API_STATUS[f.status] || 'ACTIVE',
+    lat: toFloat(f.latitude),
+    lon: toFloat(f.longitude),
+  };
+};
+
+// =============== API client ===============
+const stationAPI = {
+  async getPaged(page = 0, size = 20) {
+    const res = await fetch(`${STATION_URL}?page=${page}&size=${size}`, { cache: 'no-store' });
+    if (!res.ok) throw new Error(`${res.status} ${await res.text()}`);
+    const data = await res.json();
+    const content = Array.isArray(data.content) ? data.content.map(mapStationFromApi) : [];
+    return {
+      content,
+      totalElements: data.totalElements ?? content.length,
+      totalPages: data.totalPages ?? 1,
+      page: data.number ?? page,
+      size: data.size ?? size,
+      empty: data.empty ?? content.length === 0,
+    };
+  },
+
+  async create(payload) {
+    const res = await fetch(STATION_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) throw new Error(`${res.status} ${await res.text()}`);
+    const data = await res.json();
+    return mapStationFromApi(data);
+  },
+
+  async update(id, payload) {
+    const res = await fetch(`${STATION_URL}/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) throw new Error(`${res.status} ${await res.text()}`);
+    const data = await res.json();
+    return mapStationFromApi(data);
+  },
+
+  async delete(id) {
+    const res = await fetch(`${STATION_URL}/${id}`, { method: 'DELETE' });
+    if (!res.ok) throw new Error(`${res.status} ${await res.text()}`);
+    return true;
+  },
+};
+
+// =============== UI components nhỏ ===============
 const StationStatus = ({ status }) => {
-  const config = STATUS_CONFIG[status];
-  // Fallback nếu trạng thái không xác định
+  const config = STATUS_CONFIG[status] || {};
   return (
     <span
       className="station-status-indicator"
-      style={{
-        backgroundColor: config?.color || '#6c757d',
-        color: config?.textColor || 'white'
-      }}
+      style={{ backgroundColor: config.color || '#6c757d', color: config.textColor || 'white' }}
+      title={status || 'Không xác định'}
     >
       {status || 'Không xác định'}
     </span>
   );
 };
 
-// Component tái sử dụng cho input/select để tối ưu form
-const FormInput = ({ id, label, type = 'text', value, onChange, placeholder, required, options }) => (
+const FormInput = ({ id, label, type = 'text', value, onChange, placeholder, required, options, step }) => (
   <div className="form-group-improved">
     <label htmlFor={id} className="label-improved">
       {label} {required && <span className="required">*</span>}
     </label>
     {options ? (
-      <select
-        id={id}
-        name={id}
-        value={value}
-        onChange={onChange}
-        className="select-improved"
-        required={required}
-      >
-        {options.map(opt => (
+      <select id={id} name={id} value={value} onChange={onChange} className="select-improved" required={required}>
+        {options.map((opt) => (
           <option key={opt} value={opt}>
             {opt}
           </option>
@@ -68,120 +149,182 @@ const FormInput = ({ id, label, type = 'text', value, onChange, placeholder, req
         placeholder={placeholder}
         className="input-improved"
         required={required}
-        min={type === 'number' ? 1 : undefined}
-        max={type === 'number' ? 100 : undefined}
+        step={step}
       />
     )}
   </div>
 );
 
-// Component chính quản lý danh sách trạm sạc và modal
+// =============== Component chính ===============
 const StationList = () => {
-  // State quản lý danh sách trạm, modal, và dữ liệu form
-  const [stations, setStations] = useState(mockStations);
+  // danh sách + phân trang
+  const [rows, setRows] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [err, setErr] = useState('');
+
+  const [page, setPage] = useState(0);
+  const [size, setSize] = useState(10);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalElements, setTotalElements] = useState(0);
+
+  // modal & form
   const [showModal, setShowModal] = useState(false);
-  const [editingStation, setEditingStation] = useState(null);
-  const [formData, setFormData] = useState({
+  const [editing, setEditing] = useState(null);
+  const emptyForm = {
     name: '',
     address: '',
     capacity: '',
-    status: 'Hoạt động',
+    status: STATUS_OPTIONS?.[0] || 'Hoạt động',
     latitude: '',
-    longitude: ''
-  });
+    longitude: '',
+  };
+  const [formData, setFormData] = useState(emptyForm);
 
-  // Load dữ liệu ban đầu khi component mount
-  useEffect(() => setStations(stationAPI.getAll()), []);
+  const pageLabel = useMemo(() => `${page + 1} / ${Math.max(totalPages, 1)}`, [page, totalPages]);
 
-  // Xử lý thay đổi input với validation
-  const handleInputChange = e => {
+  // ====== load list ======
+  const loadStations = async (p = page, s = size) => {
+    setLoading(true);
+    setErr('');
+    try {
+      const data = await stationAPI.getPaged(p, s);
+      setRows(data.content);
+      setTotalPages(data.totalPages);
+      setTotalElements(data.totalElements);
+      setPage(data.page);
+      setSize(data.size);
+    } catch (e) {
+      console.error(e);
+      setErr(`Không tải được danh sách trạm: ${e.message}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadStations(0, size);
+    
+  }, [size]);
+
+  // ====== handlers ======
+  const handleInputChange = (e) => {
     const { name, value } = e.target;
     if (name === 'capacity') {
-      const numValue = parseInt(value);
-      if (value && (isNaN(numValue) || numValue < 1)) return;
+      const n = toInt(value);
+      if (value !== '' && (n == null || n < 0)) return;
     }
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  // Xử lý submit form (thêm hoặc cập nhật trạm)
-  const handleSubmit = e => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!formData.name.trim() || !formData.address.trim() || !formData.capacity || !formData.latitude || !formData.longitude) {
-      alert('Vui lòng điền đầy đủ thông tin');
+    setErr('');
+    try {
+      const payload = mapFormToRequest(formData, editing);
+      if (!payload.stationName || !payload.address || payload.totalSlots == null || payload.lat == null || payload.lon == null) {
+        throw new Error('Vui lòng điền đầy đủ thông tin bắt buộc.');
+      }
+
+      if (editing?.id) {
+        const updated = await stationAPI.update(editing.id, payload);
+        setRows((prev) => prev.map((r) => (r.id === editing.id ? updated : r)));
+      } else {
+        const created = await stationAPI.create(payload);
+        setRows((prev) => [created, ...prev]);
+        setTotalElements((t) => t + 1);
+      }
+      closeModal();
+    } catch (e2) {
+      console.error(e2);
+      setErr(`Lưu thất bại: ${e2.message}`);
+    }
+  };
+
+  const handleEdit = (row) => {
+    setEditing(row);
+    setFormData({
+      name: row.name || '',
+      address: row.address || '',
+      capacity: row.capacity?.toString() || '',
+      status: row.status || (STATUS_OPTIONS?.[0] || 'Hoạt động'),
+      latitude: row.latitude != null ? String(row.latitude) : '',
+      longitude: row.longitude != null ? String(row.longitude) : '',
+    });
+    setShowModal(true);
+  };
+
+  const handleDelete = async (id) => {
+    if (!id) {
+      setErr('Xóa thất bại: id không hợp lệ.');
       return;
     }
-    const submitData = {
-      ...formData,
-      capacity: parseInt(formData.capacity),
-      status: formData.status || 'Hoạt động',
-      latitude: parseFloat(formData.latitude),
-      longitude: parseFloat(formData.longitude)
-    };
-    editingStation ? stationAPI.update(editingStation.id, submitData) : stationAPI.create(submitData);
-    setStations(stationAPI.getAll());
-    closeModal();
-  };
-
-  // Mở modal chỉnh sửa trạm
-  const handleEdit = station => {
-    setEditingStation(station);
-    setFormData({
-      name: station.name || '',
-      address: station.address || '',
-      capacity: station.capacity?.toString() || '',
-      status: station.status || 'Hoạt động',
-      latitude: station.latitude?.toString() || '',
-      longitude: station.longitude?.toString() || ''
-    });
-    setShowModal(true);
-  };
-
-  // Xóa trạm với xác nhận
-  const handleDelete = id => {
-    if (window.confirm('Bạn có chắc chắn muốn xóa trạm này?')) {
-      stationAPI.delete(id);
-      setStations(stationAPI.getAll());
+    if (!window.confirm('Bạn có chắc chắn muốn xóa trạm này?')) return;
+    setErr('');
+    try {
+      await stationAPI.delete(id);
+      const remaining = rows.filter((r) => r.id !== id).length;
+      if (remaining === 0 && page > 0) {
+        await loadStations(page - 1, size);
+      } else {
+        setRows((prev) => prev.filter((r) => r.id !== id));
+        setTotalElements((t) => Math.max(0, t - 1));
+      }
+    } catch (e) {
+      console.error(e);
+      setErr(`Xóa thất bại: ${e.message}`);
     }
   };
 
-  // Mở modal thêm trạm mới
   const openCreateModal = () => {
-    setEditingStation(null);
-    setFormData({
-      name: '',
-      address: '',
-      capacity: '',
-      status: 'Hoạt động',
-      latitude: '',
-      longitude: ''
-    });
+    setEditing(null);
+    setFormData(emptyForm);
     setShowModal(true);
   };
 
-  // Đóng modal và reset form
   const closeModal = () => {
     setShowModal(false);
-    setEditingStation(null);
-    setFormData({ name: '', address: '', capacity: '', status: 'Hoạt động', latitude: '', longitude: '' });
+    setEditing(null);
+    setFormData(emptyForm);
   };
 
-  // Render giao diện
+  const gotoPrev = () => {
+    if (page <= 0) return;
+    loadStations(page - 1, size);
+  };
+  const gotoNext = () => {
+    if (page + 1 >= totalPages) return;
+    loadStations(page + 1, size);
+  };
+
+  // =============== render ===============
   return (
     <div className="station-list">
-      {/* Header với tiêu đề và nút thêm trạm */}
       <div className="list-header">
-        <h2 className="title-black">Danh sách trạm sạc ({stations.length})</h2>
-        <button className="add-btn" onClick={openCreateModal}>
-          <Plus size={14} /> Thêm trạm mới
-        </button>
+        <h2 className="title-black">Danh sách trạm sạc ({totalElements})</h2>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          <label className="label-improved" htmlFor="pageSize">Mỗi trang:</label>
+          <select
+            id="pageSize"
+            className="select-improved"
+            value={size}
+            onChange={(e) => setSize(Number(e.target.value))}
+          >
+            {[5,10,20,50,100].map((s) => <option key={s} value={s}>{s}</option>)}
+          </select>
+          <button className="add-btn" onClick={openCreateModal}>
+            <Plus size={14} /> Thêm trạm mới
+          </button>
+        </div>
       </div>
 
-      {/* Bảng hiển thị danh sách trạm sạc */}
+      {err && <div className="error-banner">{err}</div>}
+      {loading && <div className="loading-banner">Đang tải…</div>}
+
       <div className="stations-table">
         <table>
           <thead>
             <tr>
-              <th>ID</th>
+              <th>ID</th> {/* STT tăng dần theo trang */}
               <th>Tên trạm</th>
               <th>Địa chỉ</th>
               <th>Sức chứa</th>
@@ -192,15 +335,19 @@ const StationList = () => {
             </tr>
           </thead>
           <tbody>
-            {stations.map(station => (
+            {rows.map((station, idx) => (
               <tr key={station.id}>
-                <td className="centered-text">{station.id}</td>
+                {/* STT: tính từ page & size */}
+                <td className="centered-text">{page * size + idx + 1}</td>
+
                 <td className="centered-text nowrap">{station.name}</td>
                 <td className="centered-text nowrap">{station.address}</td>
                 <td className="centered-text nowrap">{station.capacity} xe</td>
-                <td className="centered-text nowrap"><StationStatus status={station.status} /></td>
-                <td className="centered-text nowrap">{station.longitude?.toFixed(6)}</td>
-                <td className="centered-text nowrap">{station.latitude?.toFixed(6)}</td>
+                <td className="centered-text nowrap">
+                  <StationStatus status={station.status} />
+                </td>
+                <td className="centered-text nowrap">{fmtCoord(station.longitude)}</td> {/* lon */}
+                <td className="centered-text nowrap">{fmtCoord(station.latitude)}</td>  {/* lat */}
                 <td>
                   <div className="station-actions">
                     <button className="btn-edit" onClick={() => handleEdit(station)}>
@@ -213,18 +360,34 @@ const StationList = () => {
                 </td>
               </tr>
             ))}
+            {!loading && rows.length === 0 && (
+              <tr>
+                <td colSpan={8} style={{ textAlign: 'center', opacity: 0.7, padding: 16 }}>
+                  Chưa có dữ liệu.
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>
 
+      {/* Pagination */}
+      <div className="pagination-bar">
+        <button className="btn-outline" onClick={gotoPrev} disabled={page <= 0}>
+          ◀ Trang trước
+        </button>
+        <span style={{ minWidth: 80, textAlign: 'center' }}>{pageLabel}</span>
+        <button className="btn-outline" onClick={gotoNext} disabled={page + 1 >= totalPages}>
+          Trang sau ▶
+        </button>
+      </div>
+
       {/* Modal thêm/sửa trạm */}
       {showModal && (
-        <div className="modal-overlay" onClick={e => e.target === e.currentTarget && closeModal()}>
+        <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && closeModal()}>
           <div className="modal-content-improved">
             <div className="modal-header-improved">
-              <h3 className="modal-title">
-                {editingStation ? 'Chỉnh sửa trạm' : 'Thêm trạm mới'}
-              </h3>
+              <h3 className="modal-title">{editing ? 'Chỉnh sửa trạm' : 'Thêm trạm mới'}</h3>
               <button className="close-btn-improved" onClick={closeModal}>✕</button>
             </div>
 
@@ -269,7 +432,7 @@ const StationList = () => {
                     value={formData.status}
                     onChange={handleInputChange}
                     required
-                    options={STATUS_OPTIONS}
+                    options={STATUS_OPTIONS /* ['Hoạt động','Bảo trì','Đầy chỗ','Tạm dừng'] */}
                   />
                 </div>
               </div>
@@ -284,7 +447,7 @@ const StationList = () => {
                     step="0.000001"
                     value={formData.longitude}
                     onChange={handleInputChange}
-                    placeholder="VD: 106.7000"
+                    placeholder="VD: 106.700000"
                     required
                   />
                   <FormInput
@@ -294,7 +457,7 @@ const StationList = () => {
                     step="0.000001"
                     value={formData.latitude}
                     onChange={handleInputChange}
-                    placeholder="VD: 10.7700"
+                    placeholder="VD: 10.770000"
                     required
                   />
                 </div>
@@ -305,7 +468,7 @@ const StationList = () => {
                   Hủy
                 </button>
                 <button type="submit" className="btn-submit-improved">
-                  {editingStation ? 'Cập nhật' : 'Thêm mới'}
+                  {editing ? 'Cập nhật' : 'Thêm mới'}
                 </button>
               </div>
             </form>

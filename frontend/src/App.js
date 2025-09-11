@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import "./App.css";
+import LoginRegisterPage from "./pages/LoginRegisterPage";
 
 // 🔹 Auth context cho admin
 import { AuthProvider } from "./AuthContext";
@@ -37,7 +38,7 @@ const AdminLoginRedirect = ({ children }) => {
 function App() {
   // Kiểm tra quyền cho user
   const isAdmin = localStorage.getItem("userRole") === "admin";
-  const isLoggedIn = localStorage.getItem("isLoggedIn") === "true";
+  const isLoggedIn = !!localStorage.getItem("token");
 
   return (
     <AuthProvider>
@@ -45,8 +46,19 @@ function App() {
         <div className="App">
           <Routes>
             {/* 🔹 User routes */}
-            <Route path="/" element={<HomePage />} />
+            {/* Trang mặc định: Luôn chuyển về trang login */}
+            <Route
+              path="/"
+              element={<Navigate to={isLoggedIn ? "/home" : "/login"} replace />}
+            />
+
+            {/* Trang đăng nhập & đăng ký */}
             <Route path="/login" element={<Login />} />
+            <Route path="/auth" element={<LoginRegisterPage />} />
+            <Route
+              path="/home"
+              element={isLoggedIn ? <HomePage /> : <Navigate to="/login" replace />}
+            />
             <Route
               path="/dashboard"
               element={isLoggedIn ? <UserDashboard /> : <Navigate to="/login" replace />}

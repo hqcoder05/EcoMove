@@ -1,209 +1,240 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 
 export default function LoginPage() {
-  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const navigate = useNavigate();
 
-  const handleLogin = (role = "user") => {
-    localStorage.setItem("isLoggedIn", "true");
-    localStorage.setItem("userRole", role);
-    if (role === "admin") {
-      navigate("/admin");
-    } else {
-      navigate("/dashboard");
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    try {
+      const response = await fetch("http://localhost:8080/api/auth/sign-in", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ username, password }),
+      });
+
+      const responseData = await response.json();
+
+      if(!response.ok) {
+        throw new Error(responseData.message || 'Đăng nhập thất bại');
+      }
+
+      const token = responseData.result?.token;
+
+      if (!token) {
+        throw new Error("Không nhận được token từ server");
+      }
+
+      localStorage.setItem("token", token);
+
+      const frofileResponse = await fetch("http://localhost:8080/api/users/get-user-profile", {
+        method: 'GET',
+        headers: { 
+          'Authorization': `Bearer ${token}`
+        },
+      });
+      
+      const profileData = await frofileResponse.json();
+
+      if(!frofileResponse.ok) {
+        throw new Error(profileData.message || 'Lỗi khi lấy thông tin người dùng');
+      }
+
+      const roles = profileData.result.roles || [];
+      
+      if (Array.isArray(roles) && roles.includes("ADMIN")) {
+        window.location.href = "/admin/dashboard";
+      } else {
+        window.location.href = "/dashboard";
+      }
+
+    } catch (error) {
+      console.error("Lỗi khi kết nối backend:", error);
+      alert("Lỗi kết nối server");
     }
-  };
+  }
 
   return (
-    <div className="login-container">
+    <div className="container">
       <style>{`
-        .login-container {
-          display: flex;
-          min-height: 100vh;
-          font-family: Arial, sans-serif;
-          flex-direction: row;
+        * {
+          margin: 0;
+          padding: 0;
+          box-sizing: border-box;
         }
-        .login-left {
-          flex: 1;
+
+        .container {
           display: flex;
           justify-content: center;
           align-items: center;
+          height: 100vh;
+          background: linear-gradient(135deg, #2d7a2d, #1e5e1e);
+          font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+          padding: 20px;
+        }
+
+        .login-box {
+          background: white;
+          border-radius: 16px;
           padding: 40px;
-          background: #fff;
-        }
-        .login-form {
+          box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
           width: 100%;
-          max-width: 380px;
+          max-width: 450px;
         }
+
         .logo {
           display: flex;
+          justify-content: center;
           align-items: center;
-          margin-bottom: 20px;
-          gap: 10px;
+          margin-bottom: 24px;
         }
-        .logo-text {
-          font-size: 24px;
-          font-weight: bold;
-          color: #207da3; /* Màu chủ đạo */
-        }
-        h2 {
-          margin-bottom: 20px;
+
+        .logo-icon {
           font-size: 28px;
-          font-weight: 700;
-          color: #207da3;
         }
+
+        .logo-text {
+          font-size: 26px;
+          font-weight: bold;
+          color: #2d7a2d;
+          margin-left: 10px;
+        }
+
+        h2 {
+          text-align: center;
+          color: #2d7a2d;
+          margin-bottom: 20px;
+        }
+
         .form-group {
           margin-bottom: 16px;
         }
-        .form-group label {
-          display: block;
-          margin-bottom: 6px;
-          font-size: 14px;
-          color: #444;
-        }
+
         .form-group input {
           width: 100%;
           padding: 12px;
-          border: 1px solid #ccc;
-          border-radius: 6px;
+          border: 2px solid #ccc;
+          border-radius: 10px;
           font-size: 14px;
         }
-        .btn-login {
+
+        .form-group input:focus {
+          border-color: #2d7a2d;
+          outline: none;
+          box-shadow: 0 0 5px rgba(45, 122, 45, 0.3);
+        }
+
+        .btn-login, .btn-google, .btn-admin {
           width: 100%;
           padding: 12px;
-          background: #207da3;
-          color: white;
-          font-weight: bold;
-          font-size: 16px;
+          margin-top: 10px;
           border: none;
-          border-radius: 6px;
+          border-radius: 10px;
+          font-weight: bold;
+          font-size: 14px;
           cursor: pointer;
-          margin-top: 8px;
         }
+
+        .btn-login {
+          background-color: #2d7a2d;
+          color: white;
+        }
+
         .btn-login:hover {
-          background: #186483;
+          background-color: #246824;
         }
+
+        .btn-google {
+          background-color: white;
+          border: 2px solid #ccc;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 10px;
+        }
+
+        .btn-admin {
+          background: linear-gradient(135deg, #ff6b35, #f7931e);
+          color: white;
+        }
+
         .extra-links {
           display: flex;
           justify-content: space-between;
-          font-size: 14px;
-          margin-top: 10px;
+          margin-top: 12px;
+          font-size: 13px;
         }
+
         .extra-links a {
-          color: #207da3;
+          color: #2d7a2d;
           text-decoration: none;
         }
-        .divider {
+
+        .extra-links a:hover {
+          text-decoration: underline;
+        }
+
+        .welcome-message {
           text-align: center;
-          margin: 20px 0;
-          color: #999;
-          position: relative;
-        }
-        .divider::before, .divider::after {
-          content: "";
-          position: absolute;
-          height: 1px;
-          width: 40%;
-          background: #ddd;
-          top: 50%;
-        }
-        .divider::before { left: 0; }
-        .divider::after { right: 0; }
-        .btn-google {
-          width: 100%;
-          padding: 10px;
-          border: 1px solid #ccc;
-          border-radius: 6px;
-          display: flex;
-          justify-content: center;
-          align-items: center;
-          gap: 8px;
+          margin-top: 30px;
           font-size: 14px;
-          cursor: pointer;
-          background: #fff;
+          color: #444;
         }
-        .btn-google img {
-          width: 18px;
-          height: 18px;
-        }
-        .login-right {
-          flex: 1;
-          background: url("https://img.vinfastauto.com/v1/images/original/car-vf9-exterior-01.png") no-repeat center center;
-          background-size: cover;
-          position: relative;
-        }
-        .login-right::after {
-          content: "";
-          position: absolute;
-          top: 0; left: 0; right: 0; bottom: 0;
-          background: rgba(32,125,163,0.3); /* overlay nhẹ màu chủ đạo */
-        }
-        @media (max-width: 900px) {
-          .login-container {
-            flex-direction: column;
-          }
-          .login-right {
-            display: none; /* Ẩn hình trên mobile */
-          }
-          .login-left {
-            flex: none;
-            width: 100%;
+
+        @media screen and (max-width: 600px) {
+          .login-box {
             padding: 20px;
+          }
+
+          .welcome-message {
+            font-size: 13px;
           }
         }
       `}</style>
 
-      {/* Khối Form */}
-      <div className="login-left">
-        <div className="login-form">
-          <div className="logo">
-            🚗 <span className="logo-text">xedienvip</span>
-          </div>
-          <h2>Đăng nhập</h2>
-          <div className="form-group">
-            <label>Email</label>
-            <input
-              type="email"
-              placeholder="Vui lòng nhập email của bạn"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
-          </div>
-          <div className="form-group">
-            <label>Mật khẩu</label>
-            <input
-              type="password"
-              placeholder="Mật khẩu"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
-          </div>
-          <button className="btn-login" onClick={() => handleLogin("user")}>
-            Đăng nhập
-          </button>
-          <div className="extra-links">
-            <a href="#">Quên mật khẩu</a>
-            <a href="#">Đăng ký tài khoản</a>
-          </div>
-          <div className="divider">Hoặc</div>
-          <button className="btn-google">
-            <img src="https://cdn-icons-png.flaticon.com/512/281/281764.png" alt="Google" />
-            Đăng nhập bằng Google
-          </button>
-          {/* Nút test Admin */}
-          <button
-            style={{ marginTop: "12px", background: "#207da3", color: "#fff", padding: "10px", borderRadius: "6px" }}
-            onClick={() => handleLogin("admin")}
-          >
-            
-          </button>
+      <div className="login-box">
+        <div className="logo">
+          <span className="logo-icon">⚡</span>
+          <span className="logo-text">EcoMove</span>
+        </div>
+        <h2>Đăng nhập</h2>
+        <div className="form-group">
+          <input
+            type="username"
+            placeholder="Vui lòng nhập tên tài khoản của bạn"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+          />
+        </div>
+        <div className="form-group">
+          <input
+            type="password"
+            placeholder="Nhập mật khẩu"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+          />
+        </div>
+        <button className="btn-login" onClick={handleLogin}>Đăng nhập</button>
+        <div className="extra-links">
+          <a href="#">Quên mật khẩu?</a>
+          <Link to="/auth">Đăng ký tài khoản</Link>
+        </div>
+        <button className="btn-google">
+          <img src="https://cdn-icons-png.flaticon.com/512/281/281764.png" width="18" height="18" alt="Google" />
+          Đăng nhập bằng Google
+        </button>
+        {/* <button className="btn-admin" onClick={() => handleLogin("admin")}>
+          🔑 Đăng nhập Admin
+        </button> */}
+
+        <div className="welcome-message">
+          <h4>Chào mừng!</h4>
+          <p>Hệ thống quản lý xe điện hiện đại và thân thiện với môi trường.<br/>Đăng nhập để trải nghiệm những tính năng tuyệt vời.</p>
         </div>
       </div>
-
-      {/* Khối hình minh hoạ */}
-      <div className="login-right"></div>
     </div>
   );
 }
