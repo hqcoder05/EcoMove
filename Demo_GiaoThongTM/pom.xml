@@ -67,6 +67,12 @@
 			<artifactId>spring-boot-starter-test</artifactId>
 			<scope>test</scope>
 		</dependency>
+		<dependency>
+			<groupId>com.fasterxml.jackson.module</groupId>
+			<artifactId>jackson-module-afterburner</artifactId>
+			<version>2.17.2</version> <!-- cùng version với jackson-core bạn đang dùng -->
+		</dependency>
+
 	</dependencies>
 
 	<build>

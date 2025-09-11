@@ -1,24 +1,34 @@
 package com.GiaoThongTM.demo.stations.controllers;
 
 import com.GiaoThongTM.demo.stations.entities.Station;
+import com.GiaoThongTM.demo.stations.projections.StationQuickView;
 import com.GiaoThongTM.demo.stations.services.StationService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.Positive;
 import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/stations")
+@RequestMapping(value = "/stations", produces = "application/json")
 @CrossOrigin("*")
 @RequiredArgsConstructor
+@Validated
 public class StationController {
 
     private final StationService stationService;
 
+    // Phân trang tránh tải toàn bảng
     @GetMapping
-    public List<Station> getAllStations() {
-        return stationService.getAllStations();
+    public Page<Station> getAllStations(@RequestParam(defaultValue = "0") @Min(0) int page,
+                                        @RequestParam(defaultValue = "20") @Min(1) @Max(100) int size) {
+        return stationService.getAllStationsPaged(PageRequest.of(page, size));
     }
 
     @PostMapping
@@ -36,12 +46,17 @@ public class StationController {
         stationService.deleteStation(id);
     }
 
+    // NEARBY tối ưu: trả projection nhẹ, chọn PostGIS/NoPostGIS
     @GetMapping("/nearby")
-    public List<Station> getNearbyStations(@RequestParam double lat, @RequestParam double lng,
-                                           @RequestParam(defaultValue = "5") int limit,
-                                           @RequestParam(defaultValue = "10") double radiusKm,
-                                           @RequestParam(defaultValue = "true") boolean onlyAvailable) {
-        return stationService.getNearbyStations(lat, lng, limit, radiusKm, onlyAvailable);
+    public List<StationQuickView> getNearbyStations(@RequestParam double lat,
+                                                    @RequestParam double lng,
+                                                    @RequestParam(defaultValue = "5") @Min(1) @Max(50) int limit,
+                                                    @RequestParam(defaultValue = "10") @Positive double radiusKm,
+                                                    @RequestParam(defaultValue = "true") boolean onlyAvailable,
+                                                    @RequestParam(defaultValue = "true") boolean usePostgis) {
+        int safeLimit = Math.min(Math.max(limit, 1), 50);             // 1..50
+        double safeRadius = Math.min(Math.max(radiusKm, 0.1), 50.0);  // 0.1..50 km
+        return stationService.getNearbyStations(lat, lng, safeLimit, safeRadius, onlyAvailable, usePostgis);
     }
 
     @GetMapping("/status")
@@ -115,7 +130,7 @@ public class StationController {
     }
 
     @GetMapping("/top/{n}")
-    public List<Station> getTopNStations(@PathVariable int n) {
+    public List<Station> getTopNStations(@PathVariable @Min(1) @Max(100) int n) {
         return stationService.findTopNStations(n);
     }
 }

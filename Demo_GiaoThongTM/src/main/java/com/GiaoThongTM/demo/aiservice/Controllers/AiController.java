@@ -18,7 +18,14 @@ import com.GiaoThongTM.demo.aiservice.dtos.response.PredictItem;
  * REST Controller cho các endpoint Java -> Python AI.
  */
 @RestController
-@RequestMapping("/ai") // app có context-path /api => URL thực tế: /api/ai/...
+@RequestMapping("/ai")
+@CrossOrigin(
+    origins = { "http://localhost:3000", "http://localhost:5173", "http://localhost:5174" }, 
+    allowedHeaders = "*", 
+    methods = { RequestMethod.GET, RequestMethod.POST, RequestMethod.OPTIONS },
+    allowCredentials = "true",
+    maxAge = 3600
+)
 @RequiredArgsConstructor
 public class AiController {
 
