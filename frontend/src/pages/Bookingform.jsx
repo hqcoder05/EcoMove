@@ -1,148 +1,267 @@
 // src/pages/BookingForm.jsx
-import React, { useMemo, useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { useNavigate, useParams, Link } from "react-router-dom";
 import { FaBolt } from "react-icons/fa";
 import "./admindashboard/AdminNavbar.css";
 
-const DEFAULT_CAR = {
-  name: "VinFast VF 8",
-  img: "https://vinfast-vn.vn/wp-content/uploads/2023/10/vinfast-vf8-1-1-1024x426.png",
-  price: 1200000, // VND / ngày
-  seats: 5,
-  range: "≈400km/lần sạc",
-  gearbox: "Số tự động",
+const toVND = (n) => Number(n ?? 0).toLocaleString("vi-VN");
+
+const fetchVehicleDetail = async (id) => {
+  const token = localStorage.getItem("token");
+  const headers = {
+    "Content-Type": "application/json",
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  };
+  const urls = [
+    `http://localhost:8080/api/vehicles/${id}`,
+    `http://localhost:8080/vehicles/${id}`,
+  ];
+
+  let lastErr;
+  for (const u of urls) {
+    try {
+      const res = await fetch(u, { headers });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      return await res.json();
+    } catch (e) {
+      lastErr = e;
+    }
+  }
+  throw lastErr ?? new Error("Không thể lấy thông tin xe");
 };
 
-export default function BookingForm() {
+const BookingForm = () => {
   const navigate = useNavigate();
+  const { vehicleId } = useParams(); // /booking-form/:vehicleId
+  const [vehicle, setVehicle] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [gettingLocation, setGettingLocation] = useState(false);
 
-  // form state (controlled)
-  const [form, setForm] = useState({
+  const [formData, setFormData] = useState({
     fullName: "",
-    phone: "",
+    phoneNumber: "",
     email: "",
-    pickupDate: "",
-    returnDate: "",
-    pickupPlace: "",
-    note: "",
-    agree: false,
+    pickupTime: "",
+    returnTime: "",
+    pickupArea: "",
+    returnArea: "",
   });
 
-  // chặn chọn ngày quá khứ
-  const todayISO = useMemo(() => new Date().toISOString().slice(0, 10), []);
   useEffect(() => {
-    if (form.pickupDate && form.returnDate && form.returnDate < form.pickupDate) {
-      setForm((f) => ({ ...f, returnDate: f.pickupDate }));
+    let mounted = true;
+    (async () => {
+      if (!vehicleId) return;
+      try {
+        setLoading(true);
+        const data = await fetchVehicleDetail(vehicleId);
+
+        // Map BE -> ViewModel (ẩn chip nếu thiếu)
+        const mapped = {
+          id: data.id || data.vehicleId || vehicleId,
+          name: data.name || "Chưa đặt tên",
+          image: data.imageUrl || "/images/default-car.jpg",
+          price: data.pricePerDayVnd ?? data.price ?? 0,
+          type: data.type || "Xe điện",
+          seats: data.seats ?? "-",
+          range:
+            data.rangeKmNEDC != null
+              ? `${data.rangeKmNEDC}km (NEDC)`
+              : data.range ?? "-",
+          trunk:
+            data.trunkLiters != null ? `${data.trunkLiters}L` : "-",
+        };
+        if (mounted) setVehicle(mapped);
+      } catch (error) {
+        console.error("Lỗi khi lấy thông tin xe:", error);
+        alert("Không thể tải thông tin xe");
+        navigate("/dashboard");
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, [vehicleId, navigate]);
+
+  const reverseGeocode = async (lat, lng) => {
+    try {
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&addressdetails=1&accept-language=vi`
+      );
+      if (!response.ok) throw new Error("Không thể lấy địa chỉ");
+      const data = await response.json();
+      const address = data.address || {};
+      let formatted = "";
+      if (address.house_number) formatted += address.house_number + " ";
+      if (address.road) formatted += address.road + ", ";
+      if (address.suburb || address.neighbourhood)
+        formatted += (address.suburb || address.neighbourhood) + ", ";
+      if (address.city_district || address.county)
+        formatted += (address.city_district || address.county) + ", ";
+      if (address.city || address.town)
+        formatted += address.city || address.town;
+      return formatted || data.display_name;
+    } catch (error) {
+      console.error("Reverse geocoding error:", error);
+      return `Vĩ độ: ${lat.toFixed(6)}, Kinh độ: ${lng.toFixed(6)}`;
     }
-  }, [form.pickupDate, form.returnDate]);
-
-  const days = useMemo(() => {
-    if (!form.pickupDate || !form.returnDate) return 1;
-    const d1 = new Date(form.pickupDate);
-    const d2 = new Date(form.returnDate);
-    const diff = Math.round((d2 - d1) / (1000 * 60 * 60 * 24)) || 0;
-    return Math.max(1, diff + 1); // tính cả ngày nhận
-  }, [form.pickupDate, form.returnDate]);
-
-  const subtotal = useMemo(() => DEFAULT_CAR.price * days, [days]);
-  const vat = useMemo(() => Math.round(subtotal * 0.1), [subtotal]);
-  const total = useMemo(() => subtotal + vat, [subtotal, vat]);
-
-  const onChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    setForm((f) => ({ ...f, [name]: type === "checkbox" ? checked : value }));
   };
 
-  const onSubmit = (e) => {
+  const getCurrentLocation = () => {
+    if (!navigator.geolocation) {
+      alert("Trình duyệt không hỗ trợ định vị");
+      return;
+    }
+    setGettingLocation(true);
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        try {
+          const address = await reverseGeocode(
+            pos.coords.latitude,
+            pos.coords.longitude
+          );
+          setFormData((prev) => ({ ...prev, pickupArea: address }));
+        } catch (e) {
+          alert("Không thể lấy địa chỉ từ vị trí hiện tại");
+        } finally {
+          setGettingLocation(false);
+        }
+      },
+      (error) => {
+        let message = "Không thể lấy vị trí hiện tại";
+        if (error.code === error.PERMISSION_DENIED)
+          message = "Bạn đã từ chối quyền truy cập vị trí";
+        else if (error.code === error.POSITION_UNAVAILABLE)
+          message = "Thông tin vị trí không khả dụng";
+        else if (error.code === error.TIMEOUT)
+          message = "Yêu cầu lấy vị trí hết thời gian";
+        alert(message);
+        setGettingLocation(false);
+      },
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+    );
+  };
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((p) => ({ ...p, [name]: value }));
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // kiểm tra tối thiểu
-    if (!form.fullName || !form.phone || !form.email || !form.pickupDate || !form.returnDate) {
-      alert("Vui lòng điền đầy đủ thông tin bắt buộc.");
+    const token = localStorage.getItem("token");
+    if (!token) {
+      alert("Bạn cần đăng nhập để đặt xe.");
+      navigate("/login");
       return;
     }
-    if (!form.agree) {
-      alert("Vui lòng đồng ý điều khoản thuê xe.");
-      return;
+    try {
+      const payload = { ...formData, vehicleId: vehicle?.id ?? vehicleId };
+      const res = await fetch("http://localhost:8080/api/bookings/create", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (res.ok) {
+        const data = await res.json().catch(() => ({}));
+        alert(data.message || "Đặt xe thành công!");
+        navigate("/history");
+      } else {
+        let serverMsg = "";
+        try {
+          serverMsg = (await res.json()).message;
+        } catch {
+          serverMsg = await res.text();
+        }
+        alert(serverMsg || `HTTP ${res.status}: Đặt xe thất bại`);
+      }
+    } catch (error) {
+      console.error("Lỗi khi kết nối backend:", error);
+      alert("Lỗi kết nối server");
     }
-    // TODO: gửi API tạo booking
-    alert("Đặt xe thành công! Chúng tôi sẽ liên hệ xác nhận.");
-    navigate("/dashboard");
   };
 
   return (
-    <div className="page-frame">
+    <div className="booking-page">
       <style>{`
-        :root { --brand:#14452F; --ink:#0f172a; --muted:#64748b; --line:#e5e7eb; }
-        .page-frame { display:grid; grid-template-rows:auto 1fr auto; min-height:100vh; background:#fff; }
-
-        /* ===== Header: dùng lại AdminNavbar.css ===== */
-        .admin-navbar .menu-item.active { color:#14452F; font-weight:700; }
-
-        /* ===== Layout ===== */
-        .wrap { max-width: 1100px; margin: 0 auto; padding: 16px 12px 100px; }
-        @media (min-width: 768px) { .wrap { padding: 24px 16px 48px; } }
-
-        .grid { display:grid; grid-template-columns:1fr; gap:16px; }
-        @media (min-width: 960px) { .grid { grid-template-columns: 1fr 1fr; gap: 22px; } }
-
-        .card { background:#fff; border:1px solid var(--line); border-radius:16px; box-shadow: 0 2px 8px rgba(0,0,0,.04); }
-        .pad { padding:16px; }
-        @media (min-width:768px) { .pad { padding:18px; } }
-
-        /* ===== Car summary ===== */
-        .title { font-size:1.25rem; font-weight:900; margin:0 0 8px; color:var(--ink); }
-        .img-wrap { border-radius:12px; overflow:hidden; background:#f3f4f6; aspect-ratio: 16/9; }
-        .img { width:100%; height:100%; object-fit:cover; display:block; }
-        .meta { display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }
-        .chip { background:#f8fafc; border:1px solid var(--line); border-radius:12px; padding:8px 10px; font-weight:700; }
-
-        .price-block { display:grid; grid-template-columns:1fr auto; gap:8px; align-items:center; margin-top:12px; }
-        .price { color:var(--brand); font-weight:900; font-size:1.3rem; }
-        .per { color:#475569; font-weight:700; }
-
-        .table { margin-top:10px; border-top:1px dashed var(--line); padding-top:10px; color:var(--ink); }
-        .row { display:flex; justify-content:space-between; padding:8px 0; }
-        .row.total { border-top:1px solid var(--line); margin-top:4px; padding-top:12px; font-weight:900; }
-        .muted { color:var(--muted); }
-
-        /* ===== Form ===== */
-        .legend { font-size:1.1rem; font-weight:900; color:var(--brand); margin:0 0 10px; }
-        .form { display:grid; grid-template-columns:1fr; gap:12px; }
-        .row2 { display:grid; grid-template-columns:1fr; gap:12px; }
-        @media (min-width:560px){ .row2 { grid-template-columns:1fr 1fr; } }
-        .label { font-weight:800; color:#0b1720; }
-        .inp, .area, .sel {
-          width:100%; padding:12px; border:1px solid var(--line); border-radius:12px; font-size:1rem; outline:none;
+        .booking-page {
+          font-family: 'Segoe UI', sans-serif;
           background:#fff;
+          min-height:100vh;
+          display:flex;
+          flex-direction:column;
         }
-        .inp:focus, .area:focus, .sel:focus { border-color:#14452F; box-shadow:0 0 0 3px rgba(20,69,47,.12); }
-        .area { min-height:96px; resize:vertical; }
-
-        .agree { display:flex; gap:10px; align-items:flex-start; }
-        .agree input { transform: translateY(3px); }
-
-        .btn { width:100%; padding:14px 16px; border-radius:14px; border:1px solid var(--brand); background:var(--brand); color:#fff; font-weight:900; font-size:1rem; }
-        .btn:active { transform: translateY(1px); }
-        .btn[disabled]{ opacity:.6; }
-        .btn.alt { background:#fff; color:var(--brand); }
-
-        /* ===== Sticky Action Bar (mobile) ===== */
-        .bar {
-          position: fixed; bottom: 0; left: 0; right: 0; z-index: 40;
-          background: #fff; border-top: 1px solid var(--line); padding: 10px 12px;
-          display: grid; grid-template-columns: 1fr 1.2fr; gap: 10px; align-items: center;
+        /* Navbar đồng bộ AdminNavbar.css */
+        .hero-like {
+          text-align:center;
+          padding: 60px 20px 30px;
+          background: linear-gradient(to right, #14452F, #A5D6A7);
+          color: #fff;
         }
-        .bar .bar-price { font-weight: 900; color: var(--brand); font-size: 1.1rem; }
-        .bar .bar-unit { color: var(--muted); font-weight: 700; font-size: .95rem; }
-        .bar .bar-btn { padding: 12px 14px; border-radius: 12px; border:1px solid var(--brand); background: var(--brand); color:#fff; font-weight: 900; font-size: 1rem; }
-        .bar .bar-btn:active { transform: translateY(1px); }
-        @media (min-width:960px){ .bar { display:none; } } /* desktop ẩn */
-
-        /* ===== Footer ===== */
-        .footer { color:#fff; text-align:center; padding:16px; font-weight:500; background:#14452F; }
+        .hero-like h1 { font-size: 2rem; margin: 0 0 8px; font-weight: 700; }
+        .hero-like p { font-size: 1.05rem; opacity: .95; margin: 0; }
+        .content-wrap {
+          padding: 40px 10%;
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 24px;
+        }
+        .card {
+          background:#fff;
+          border-radius:16px;
+          border:2px solid #14452F;
+          box-shadow:0 4px 10px rgba(0,0,0,.08);
+          transition: .2s ease;
+        }
+        .card:hover { transform: translateY(-2px); box-shadow:0 8px 18px rgba(0,0,0,.12); }
+        .car-summary { padding: 22px; text-align:center; }
+        .car-img { width:100%; height:auto; border-radius:10px; margin-bottom:14px; }
+        .car-title { font-size:22px; margin: 6px 0 8px; color:#14452F; }
+        .car-price { color:#0b6b3a; font-weight:900; font-size:18px; margin-bottom: 10px; }
+        .car-info { list-style:none; padding:0; margin:0; color:#333; }
+        .car-info li { margin:6px 0; font-size: 15px; }
+        .booking-card { padding: 24px; }
+        .booking-card h2 { margin:0 0 12px; font-size:1.4rem; color:#14452F; }
+        .booking-card p.sub { margin:0 0 18px; color:#333; font-size:.95rem; }
+        .booking-form form { display:flex; flex-direction:column; gap:15px; }
+        .booking-form label { display:flex; flex-direction:column; font-weight:700; color:#333; }
+        .booking-form input {
+          padding:10px; margin-top:6px;
+          border:1px solid #ccc; border-radius:8px; outline:none;
+        }
+        .booking-form input:focus { border:1px solid #14452F; }
+        .form-row { display:flex; gap:15px; }
+        .booking-actions { display:flex; gap:12px; margin-top:16px; flex-wrap:wrap; }
+        .btn-primary {
+          padding:10px 18px; background:#14452F; color:#fff; border:none;
+          border-radius:999px; font-weight:600; cursor:pointer;
+        }
+        .btn-secondary {
+          padding:10px 18px; background:#fff; color:#14452F;
+          border:2px solid #14452F; border-radius:999px; font-weight:600; cursor:pointer;
+          text-decoration:none; display:inline-block;
+        }
+        .submit-btn {
+          background: linear-gradient(45deg, #007bff, #00c6ff);
+          color:#fff; padding:12px; border:none; border-radius:8px;
+          cursor:pointer; font-size:16px; font-weight:700;
+        }
+        .footer {
+          margin-top:auto; color:#fff; text-align:center; padding:16px;
+          font-weight:500; background:#14452F;
+        }
+        @media (max-width: 900px) {
+          .content-wrap { grid-template-columns: 1fr; padding: 30px 6%; }
+          .form-row { flex-direction: column; }
+        }
       `}</style>
 
-      {/* ===== HEADER ===== */}
+      {/* NAVBAR */}
       <nav className="admin-navbar">
         <div className="navbar-brand">
           <h2><FaBolt style={{ marginRight: 8, color: "#fbc02d" }} />EcoMove</h2>
@@ -152,188 +271,176 @@ export default function BookingForm() {
           <Link to="/dashboard" className="menu-item">Thuê xe</Link>
           <Link to="/map" className="menu-item">Gợi ý trạm sạc</Link>
         </div>
-        <div className="navbar-user" />
+        <div className="navbar-user">
+          <button
+            className="logout-btn"
+            onClick={async () => {
+              try {
+                const token = localStorage.getItem("token");
+                await fetch("http://localhost:8080/api/auth/sign-out", {
+                  method: "POST",
+                  headers: { Authorization: `Bearer ${token}` },
+                });
+              } catch {}
+              localStorage.removeItem("token");
+              window.location.href = "/login";
+            }}
+          >
+            Đăng xuất
+          </button>
+        </div>
       </nav>
 
-      {/* ===== CONTENT ===== */}
-      <main className="wrap">
-        <div className="grid">
-          {/* Tóm tắt xe */}
-          <section className="card pad" aria-label="Thông tin xe đã chọn">
-            <h1 className="title">{DEFAULT_CAR.name}</h1>
-            <div className="img-wrap" aria-hidden="true">
-              <img className="img" src={DEFAULT_CAR.img} alt={DEFAULT_CAR.name} />
-            </div>
+      {/* HERO */}
+      <div className="hero-like">
+        <h1>Đặt xe điện dễ dàng</h1>
+        <p>{vehicle ? `Xe bạn chọn: ${vehicle.name}` : "Nhập thông tin chuyến đi của bạn."}</p>
+      </div>
 
-            <div className="meta">
-              <span className="chip">👥 {DEFAULT_CAR.seats} chỗ</span>
-              <span className="chip">🔋 {DEFAULT_CAR.range}</span>
-              <span className="chip">⚙️ {DEFAULT_CAR.gearbox}</span>
-            </div>
-
-            <div className="price-block">
-              <div>
-                <div className="price">{DEFAULT_CAR.price.toLocaleString("vi-VN")} VNĐ</div>
-                <div className="per">/ngày (đã gồm VAT)</div>
-              </div>
-            </div>
-
-            <div className="table" role="region" aria-label="Tạm tính">
-              <div className="row">
-                <span className="muted">Số ngày</span>
-                <b>{days}</b>
-              </div>
-              <div className="row">
-                <span className="muted">Tạm tính</span>
-                <b>{subtotal.toLocaleString("vi-VN")}đ</b>
-              </div>
-              <div className="row">
-                <span className="muted">VAT (10%)</span>
-                <b>{vat.toLocaleString("vi-VN")}đ</b>
-              </div>
-              <div className="row total">
-                <span>Tổng cộng</span>
-                <b>{total.toLocaleString("vi-VN")}đ</b>
-              </div>
+      {/* CONTENT */}
+      {loading ? (
+        <div style={{ padding: "24px", textAlign: "center" }}>Đang tải thông tin xe…</div>
+      ) : !vehicle ? (
+        <div style={{ padding: "24px", textAlign: "center" }}>
+          Không tìm thấy thông tin xe.{" "}
+          <button className="btn-secondary" onClick={() => navigate("/dashboard")}>Về danh sách xe</button>
+        </div>
+      ) : (
+        <div className="content-wrap">
+          {/* TÓM TẮT XE */}
+          <section className="card car-summary">
+            <img
+              className="car-img"
+              src={vehicle.image}
+              alt={vehicle.name}
+              onError={(e) => { e.currentTarget.src = "/images/default-car.jpg"; }}
+            />
+            <h2 className="car-title">{vehicle.name}</h2>
+            <p className="car-price">{toVND(vehicle.price)} VNĐ / ngày</p>
+            <ul className="car-info">
+              <li>🚗 {vehicle.type}</li>
+              {vehicle.seats && <li>👥 {vehicle.seats}</li>}
+              {vehicle.range && <li>⚡ {vehicle.range}</li>}
+              {vehicle.trunk && <li>🧳 Cốp {vehicle.trunk}</li>}
+              <li>🔑 Số tự động</li>
+            </ul>
+            <div className="booking-actions" style={{ justifyContent: "center" }}>
+              <button className="btn-primary" onClick={() => navigate("/map")}>Xem trạm sạc gần bạn</button>
+              <Link to="/dashboard" className="btn-secondary">Về danh sách xe</Link>
             </div>
           </section>
 
-          {/* Form đặt xe */}
-          <section className="card pad" aria-label="Form đặt xe">
-            <h2 className="legend">Đặt xe ngay</h2>
-            <form className="form" onSubmit={onSubmit} noValidate>
-              <label className="label">
+          {/* FORM ĐẶT XE */}
+          <section className="card booking-card booking-form">
+            <h2>Đặt xe</h2>
+            <p className="sub">Chọn điểm đón, thời gian và thông tin liên hệ.</p>
+
+            <form onSubmit={handleSubmit}>
+              <label>
                 Họ và tên
                 <input
-                  className="inp"
                   name="fullName"
+                  value={formData.fullName}
+                  onChange={handleChange}
                   type="text"
-                  placeholder="Nguyễn Văn A"
-                  value={form.fullName}
-                  onChange={onChange}
+                  placeholder="Nhập họ tên của bạn"
                   required
                 />
               </label>
 
-              <div className="row2">
-                <label className="label">
-                  Số điện thoại
-                  <input
-                    className="inp"
-                    name="phone"
-                    type="tel"
-                    placeholder="09xxxxxxxx"
-                    value={form.phone}
-                    onChange={onChange}
-                    pattern="^\\+?\\d{9,15}$"
-                    inputMode="tel"
-                    required
-                  />
-                </label>
+              <label>
+                Số điện thoại
+                <input
+                  name="phoneNumber"
+                  value={formData.phoneNumber}
+                  onChange={handleChange}
+                  type="tel"
+                  placeholder="Nhập số điện thoại"
+                  required
+                />
+              </label>
 
-                <label className="label">
-                  Email
-                  <input
-                    className="inp"
-                    name="email"
-                    type="email"
-                    placeholder="example@email.com"
-                    value={form.email}
-                    onChange={onChange}
-                    required
-                  />
-                </label>
-              </div>
+              <label>
+                Email
+                <input
+                  name="email"
+                  value={formData.email}
+                  onChange={handleChange}
+                  type="email"
+                  placeholder="example@email.com"
+                  required
+                />
+              </label>
 
-              <div className="row2">
-                <label className="label">
+              <div className="form-row">
+                <label>
                   Ngày nhận xe
                   <input
-                    className="inp"
-                    name="pickupDate"
+                    name="pickupTime"
+                    value={formData.pickupTime}
+                    onChange={handleChange}
                     type="date"
-                    min={todayISO}
-                    value={form.pickupDate}
-                    onChange={onChange}
                     required
                   />
                 </label>
 
-                <label className="label">
+                <label>
                   Ngày trả xe
                   <input
-                    className="inp"
-                    name="returnDate"
+                    name="returnTime"
+                    value={formData.returnTime}
+                    onChange={handleChange}
                     type="date"
-                    min={form.pickupDate || todayISO}
-                    value={form.returnDate}
-                    onChange={onChange}
                     required
                   />
                 </label>
               </div>
 
-              <label className="label">
+              <label>
                 Địa điểm nhận xe
+                <div style={{ display: "flex", gap: 10, alignItems: "flex-end" }}>
+                  <input
+                    name="pickupArea"
+                    value={formData.pickupArea}
+                    onChange={handleChange}
+                    type="text"
+                    placeholder="Nhập địa chỉ hoặc dùng vị trí hiện tại"
+                    required
+                    style={{ flex: 1 }}
+                  />
+                  <button
+                    type="button"
+                    onClick={getCurrentLocation}
+                    disabled={gettingLocation}
+                    className="btn-primary"
+                    style={{ borderRadius: 8 }}
+                  >
+                    {gettingLocation ? "Đang lấy…" : "📍 Vị trí hiện tại"}
+                  </button>
+                </div>
+              </label>
+
+              <label>
+                Địa điểm trả xe
                 <input
-                  className="inp"
-                  name="pickupPlace"
+                  name="returnArea"
+                  value={formData.returnArea}
+                  onChange={handleChange}
                   type="text"
-                  placeholder="VD: 214 Nguyễn Đình Chiểu, Quận 3…"
-                  value={form.pickupPlace}
-                  onChange={onChange}
+                  placeholder="Hiệp Bình Chánh, Thủ Đức, TP.HCM..."
                 />
               </label>
 
-              <label className="label">
-                Ghi chú (tuỳ chọn)
-                <textarea
-                  className="area"
-                  name="note"
-                  placeholder="Yêu cầu thêm ghế trẻ em, khung giờ linh hoạt…"
-                  value={form.note}
-                  onChange={onChange}
-                />
-              </label>
-
-              <label className="agree">
-                <input
-                  type="checkbox"
-                  name="agree"
-                  checked={form.agree}
-                  onChange={onChange}
-                  aria-label="Đồng ý điều khoản"
-                />
-                <span>
-                  Tôi đồng ý với <Link to="/terms" target="_blank" rel="noreferrer">Điều khoản thuê xe</Link> và{" "}
-                  <Link to="/policy" target="_blank" rel="noreferrer">Chính sách bảo mật</Link>.
-                </span>
-              </label>
-
-              <button className="btn" type="submit" disabled={!form.agree}>
-                Xác nhận đặt xe
-              </button>
-              <button type="button" className="btn alt" onClick={() => navigate(-1)}>
-                Quay lại
-              </button>
+              <button type="submit" className="submit-btn">Xác nhận đặt xe</button>
             </form>
           </section>
         </div>
-      </main>
+      )}
 
-      {/* ===== Sticky action bar (mobile) ===== */}
-      <div className="bar" role="region" aria-label="Xác nhận nhanh">
-        <div>
-          <div className="bar-price">{total.toLocaleString("vi-VN")}đ</div>
-          <div className="bar-unit">Tổng ({days} ngày)</div>
-        </div>
-        <button className="bar-btn" onClick={onSubmit} aria-label="Xác nhận đặt xe">
-          Xác nhận đặt xe
-        </button>
-      </div>
-
-      {/* ===== FOOTER ===== */}
-      <footer className="footer">© 2025 EcoMove. Liên hệ: support@ecomove.com</footer>
+      {/* FOOTER */}
+      <div className="footer">© 2025 EcoMove. Liên hệ: support@ecomove.com</div>
     </div>
   );
-}
+};
+
+export default BookingForm;

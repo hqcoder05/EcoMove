@@ -1,34 +1,119 @@
-import React from "react";
-import { Link } from "react-router-dom";
-import { FaCar, FaChargingStation, FaUser } from "react-icons/fa";
-import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { FaBolt } from 'react-icons/fa';
-import '../admindashboard/AdminNavbar.css';
+import React, { useEffect, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { FaCar, FaChargingStation, FaUser, FaBolt } from "react-icons/fa";
+import "../admindashboard/AdminNavbar.css";
+
+/** API roots */
+const ROOT_API = "http://localhost:8080/api";
+const AI_API   = `${ROOT_API}/ai`;
+
+// Bulk predict cho tất cả trạm (giờ kế tiếp)
+const PREDICT_ALL_NEXT = `${AI_API}/predict/next-hour/all`;
+
+// Logout
+const AUTH_SIGNOUT = `${ROOT_API}/auth/sign-out`;
 
 const HomePage = () => {
   const navigate = useNavigate();
 
+  const [loadingPredict, setLoadingPredict] = useState(false);
+  const [predictions, setPredictions] = useState([]); // [{district, avgDemand, count}]
+  const [lastUpdated, setLastUpdated] = useState(null);
+  const [error, setError] = useState("");
+
   const handleLogout = async () => {
     try {
       const token = localStorage.getItem("token");
-
-      // Gọi API logout nếu có (bạn có thể bỏ nếu không cần)
-      await fetch("http://localhost:8080/api/auth/sign-out", {
+      await fetch(AUTH_SIGNOUT, {
         method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
-
-      // Xóa token
       localStorage.removeItem("token");
       window.location.href = "/login";
-    } catch (error) {
-      console.error("Lỗi đăng xuất:", error);
+    } catch (err) {
+      console.error("Lỗi đăng xuất:", err);
       alert("Không thể đăng xuất. Vui lòng thử lại.");
     }
   };
+
+  // Tính giờ kế tiếp để hiển thị tiêu đề
+  const nextHourInfo = () => {
+    const now = new Date();
+    const next = new Date(now.getTime() + 60 * 60 * 1000);
+    const hour = next.getHours();
+    const dayOfWeek = next.toLocaleDateString("en-US", { weekday: "long" });
+    return { hour, dayOfWeek };
+  };
+
+  // Gọi 1 API duy nhất: /api/ai/predict/next-hour/all
+  // Sau đó gộp theo district, tính trung bình predicted_demand
+  const loadPredictions = async () => {
+    setLoadingPredict(true);
+    setError("");
+    try {
+      const token = localStorage.getItem("token");
+      const r = await fetch(PREDICT_ALL_NEXT, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      if (!r.ok) throw new Error(`Predict-all HTTP ${r.status}`);
+      const data = await r.json();
+      if (!Array.isArray(data)) throw new Error("Payload không phải mảng");
+
+      // Chuẩn hóa record trạm
+      const rows = data
+        .map((it) => ({
+          district:
+            it.district ?? it.districtName ?? it.quan ?? it.quanHuyen ?? it.area ?? "",
+          predicted:
+            typeof it.predicted_demand === "number"
+              ? it.predicted_demand
+              : typeof it.predicted_demand === "string"
+              ? Number(it.predicted_demand)
+              : null,
+        }))
+        .filter((x) => x.district && typeof x.predicted === "number" && !Number.isNaN(x.predicted));
+
+      // Gộp theo district
+      const groups = new Map();
+      for (const r of rows) {
+        const key = r.district.trim();
+        if (!groups.has(key)) groups.set(key, { district: key, sum: 0, count: 0 });
+        const g = groups.get(key);
+        g.sum += r.predicted;
+        g.count += 1;
+      }
+
+      // Tính trung bình & sort desc
+      const results = Array.from(groups.values())
+        .map((g) => ({
+          district: g.district,
+          avgDemand: g.count ? g.sum / g.count : null,
+          count: g.count,
+        }))
+        .filter((g) => typeof g.avgDemand === "number")
+        .sort(
+          (a, b) =>
+            (b.avgDemand ?? Number.NEGATIVE_INFINITY) -
+            (a.avgDemand ?? Number.NEGATIVE_INFINITY)
+        );
+
+      setPredictions(results);
+      setLastUpdated(new Date());
+    } catch (e) {
+      console.error(e);
+      setError(e.message || "Không thể tải dự báo");
+    } finally {
+      setLoadingPredict(false);
+    }
+  };
+
+  useEffect(() => {
+    loadPredictions();
+  }, []);
+
+  const { hour, dayOfWeek } = nextHourInfo();
+  const topN = 8;
+  const displayList = predictions.slice(0, topN);
 
   return (
     <div className="homepage">
@@ -64,7 +149,7 @@ const HomePage = () => {
         .hero {
           text-align: center;
           padding: 80px 20px;
-          background: linear-gradient(to right, #14452F, #A5D6A7); /* xanh lá đậm → xanh lá nhạt */
+          background: linear-gradient(to right, #14452F, #A5D6A7);
           color: white;
         }
         .hero h1 {
@@ -110,19 +195,105 @@ const HomePage = () => {
           margin-top: 8px;
           color: #333;
         }
+
+        /* Prediction section */
+        .predict-wrap {
+          padding: 20px 10%;
+          margin-top: -20px;
+          margin-bottom: 30px;
+        }
+        .predict-header {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          margin-bottom: 16px;
+        }
+        .predict-title {
+          font-size: 1.4rem;
+          font-weight: 700;
+          color: #14452F;
+        }
+        .predict-meta {
+          font-size: 0.95rem;
+          color: #444;
+        }
+        .predict-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+          gap: 16px;
+        }
+        .predict-card {
+          border: 1px solid #e0e0e0;
+          border-radius: 14px;
+          padding: 16px;
+          background: #ffffff;
+          box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+        }
+        .predict-name {
+          font-weight: 700;
+          color: #14452F;
+          margin-bottom: 6px;
+        }
+        .predict-row {
+          display: flex;
+          justify-content: space-between;
+          font-size: 0.95rem;
+          margin: 6px 0;
+        }
+        .predict-chip {
+          display: inline-block;
+          padding: 2px 10px;
+          border-radius: 999px;
+          background: #e8f5e9;
+          border: 1px solid #a5d6a7;
+          font-weight: 600;
+        }
+        .predict-cta {
+          display: flex;
+          gap: 8px;
+          align-items: center;
+          margin-bottom: 12px;
+        }
+        .predict-btn {
+          border: 0;
+          background: #14452F;
+          color: #fff;
+          padding: 8px 12px;
+          border-radius: 10px;
+          cursor: pointer;
+        }
+        .predict-btn:disabled { opacity: .7; cursor: not-allowed; }
+        .predict-empty {
+          text-align: center;
+          color: #666;
+          padding: 16px;
+        }
+
+        /* FOOTER — dài hơn */
         .footer {
           margin-top: auto;
-          color: white;
+          background: #14452F;
+          color: #ffffff;
           text-align: center;
-          padding: 16px;
+          padding: 36px 16px;   /* tăng padding */
+          min-height: 140px;    /* cao hơn mặc định */
+          display: flex;
+          align-items: center;
+          justify-content: center;
           font-weight: 500;
+        }
+        @media (max-width: 768px) {
+          .footer {
+            padding: 48px 20px;  /* mobile padding lớn hơn */
+            min-height: 180px;   /* footer dài hơn trên mobile */
+          }
         }
       `}</style>
 
       {/* Navbar */}
       <nav className="admin-navbar">
         <div className="navbar-brand">
-          <h2><FaBolt style={{ marginRight: '8px', color: '#fbc02d' }} />EcoMove</h2>
+          <h2><FaBolt style={{ marginRight: "8px", color: "#fbc02d" }} />EcoMove</h2>
         </div>
         <div className="navbar-menu">
           <Link to="/" className="menu-item">Trang chủ</Link>
@@ -134,7 +305,7 @@ const HomePage = () => {
         </div>
       </nav>
 
-      {/* Hero section */}
+      {/* Hero */}
       <div className="hero">
         <h1>Chào mừng đến với EcoMove</h1>
         <p>Thuê xe điện và tìm trạm sạc dễ dàng, nhanh chóng và tiện lợi.</p>
@@ -162,8 +333,51 @@ const HomePage = () => {
         </div>
       </div>
 
+      {/* Prediction Section (TRUNG BÌNH THEO QUẬN) */}
+      <section className="predict-wrap">
+        <div className="predict-header">
+          <div className="predict-title">
+            Dự báo trung bình theo quận giờ tới ({dayOfWeek}, {String(hour).padStart(2, "0")}:00)
+          </div>
+          <div className="predict-meta">
+            {lastUpdated ? `Cập nhật: ${lastUpdated.toLocaleTimeString()}` : "Chưa cập nhật"}
+          </div>
+        </div>
+
+        <div className="predict-cta">
+          <button className="predict-btn" onClick={loadPredictions} disabled={loadingPredict}>
+            {loadingPredict ? "Đang tính..." : "Làm mới dự báo"}
+          </button>
+          {error && <span style={{ color: "#d32f2f", marginLeft: 8 }}>{error}</span>}
+        </div>
+
+        {loadingPredict && !predictions.length ? (
+          <div className="predict-empty">Đang dự báo theo quận...</div>
+        ) : !predictions.length ? (
+          <div className="predict-empty">Chưa có dữ liệu dự báo theo quận.</div>
+        ) : (
+          <div className="predict-grid">
+            {displayList.map((it) => (
+              <div className="predict-card" key={it.district}>
+                <div className="predict-name">{it.district}</div>
+                <div className="predict-row">
+                  <span>Số trạm tính</span>
+                  <span>{it.count}</span>
+                </div>
+                <div className="predict-row">
+                  <span>Nhu cầu dự báo TB</span>
+                  <span className="predict-chip">
+                    {typeof it.avgDemand === "number" ? it.avgDemand.toFixed(2) : "—"}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+
       {/* Footer */}
-      <div className="footer" style={{ backgroundColor: '#14452F' }}>
+      <div className="footer">
         © 2025 EcoMove. Liên hệ: support@ecomove.com
       </div>
     </div>
