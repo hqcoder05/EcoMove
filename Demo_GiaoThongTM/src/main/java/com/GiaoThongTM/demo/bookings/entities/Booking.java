@@ -28,12 +28,12 @@ public class Booking {
 
     private LocalDate returnTime;
 
+    private long totalPrice;
+
     @Enumerated(EnumType.STRING)
     private BookingStatus status;
 
-    // Không bắt buộc, nhưng nếu bạn muốn tránh phải tính toán mỗi lần thì:
-    @Transient // Nếu không lưu DB mà chỉ muốn trả ra qua DTO
-    private long durationDays;
+    private Long durationDays;
 
     @ManyToOne
     @JoinColumn(name = "user_id")

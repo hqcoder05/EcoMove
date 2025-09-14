@@ -67,10 +67,16 @@ public class BookingService {
         }
 
         long days = ChronoUnit.DAYS.between(bookingRequest.getPickupTime(), bookingRequest.getReturnTime());
+        if (days <= 0) {
+            days = 1; // Tối thiểu 1 ngày
+        }
+        Long vehiclePrice = vehicle.getPricePerDay(); // Hoặc tên field price trong Vehicle entity
+        Long totalPrice = vehiclePrice * days;
 
         Booking booking = bookingCustomMapper.toBooking(bookingRequest);
         booking.setUser(user);
         booking.setDurationDays(days);
+        booking.setTotalPrice(totalPrice);
         booking.setVehicle(vehicle);
         booking.setStatus(BookingStatus.PENDING);
 
@@ -148,7 +154,7 @@ public class BookingService {
         return bookingCustomMapper.toBookingResponse(booking);
     }
 
-    @PreAuthorize("hasAuthority('SCOPE_ADMIN')")
+//    @PreAuthorize("hasAuthority('SCOPE_ADMIN')")
     public BookingResponse getBooking(UUID bookingId) {
         Booking booking = bookingRepository.findById(bookingId).orElseThrow(
                 () -> new AppException(ErrorCode.BOOKING_INVALID));

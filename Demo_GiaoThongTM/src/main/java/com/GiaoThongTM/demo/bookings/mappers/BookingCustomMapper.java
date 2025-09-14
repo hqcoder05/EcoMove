@@ -38,6 +38,7 @@ public class BookingCustomMapper {
         bookingResponse.setVehicle(vehicleMapper.toResponse(booking.getVehicle()));
         bookingResponse.setStatus(booking.getStatus());
         bookingResponse.setDurationDays(booking.getDurationDays());
+        bookingResponse.setTotalPrice(booking.getTotalPrice());
 
         return bookingResponse;
     }

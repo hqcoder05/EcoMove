@@ -22,6 +22,6 @@ public class BookingResponse {
     private BookingStatus status;
     private VehicleResponse vehicle;
     private long durationDays;
+    private long totalPrice;
     private UserResponse user;
-//    private long totalPrice;
 }
