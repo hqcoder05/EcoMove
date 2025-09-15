@@ -1,0 +1,342 @@
+/* Container chính của danh sách trạm sạc */
+.station-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: var(--space-sm); /* Khoảng cách viền từ index.css */
+  background: #ffffff; /* Màu nền trắng */
+  min-height: 100vh; /* Chiều cao tối thiểu toàn màn hình */
+}
+
+/* Header chứa tiêu đề và nút thêm trạm */
+.list-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.list-header .title-black {
+  font-size: 1.8rem; /* Đồng bộ font-size với VehicleList */
+  color: #000000; /* Màu đen */
+  margin: 0;
+  font-weight: 600;
+}
+
+.add-btn {
+  background: #2E7D32; /* Màu xanh lá giống VehicleList */
+  color: white;
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 20px; /* Bo góc lớn, đồng bộ VehicleList */
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  transition: all 0.3s ease;
+}
+
+.add-btn:hover {
+  background: #1A4D23; /* Màu xanh đậm khi hover */
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(46, 125, 50, 0.3);
+}
+
+/* Bảng danh sách trạm sạc */
+.stations-table {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.stations-table table {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+  border-radius: 8px; /* Bo góc gốc */
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05); /* Đổ bóng nhẹ */
+  min-width: 850px; /* Tăng chiều rộng tối thiểu để chứa 2 cột mới */
+}
+
+.stations-table th,
+.stations-table td {
+  padding: 0.6rem;
+  text-align: center; /* Căn giữa cho tất cả cột */
+  border-bottom: 1px solid #eee;
+  color: #000000; /* Màu đen */
+  white-space: nowrap; /* Ngăn xuống dòng */
+  overflow: hidden; /* Ẩn nội dung vượt quá */
+  text-overflow: ellipsis; /* Thêm dấu ... nếu nội dung dài */
+}
+
+/* Đảm bảo cột Thao tác đủ rộng để nút Sửa/Xóa nằm ngang */
+.stations-table th:last-child,
+.stations-table td:last-child {
+  min-width: 140px; /* Giữ nguyên để chứa 2 nút */
+}
+
+.stations-table th:nth-child(6),
+.stations-table td:nth-child(6) {
+  min-width: 120px; /* Đảm bảo cột Kinh độ đủ rộng */
+}
+
+.stations-table th:nth-child(7),
+.stations-table td:nth-child(7) {
+  min-width: 120px; /* Đảm bảo cột Vĩ độ đủ rộng */
+}
+
+.stations-table th {
+  background-color: #0f5132; /* Màu xanh đậm gốc */
+  color: #ffffff;
+  font-weight: 600;
+}
+
+/* Trạng thái trạm sạc */
+.station-status-indicator {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  text-align: center;
+  min-width: 70px;
+  border: 1px solid rgba(255,255,255,0.2);
+}
+
+.station-status-unknown {
+  background-color: #6c757d;
+  color: white;
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  min-width: 70px;
+}
+
+/* Container cho nút Sửa/Xóa */
+.station-actions {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
+  align-items: center;
+  white-space: nowrap; /* Ngăn nút xuống hàng */
+}
+
+/* Nút sửa/xóa trong bảng */
+.btn-edit,
+.btn-delete {
+  padding: 0.3rem 0.5rem; /* Kích thước gốc */
+  border: none;
+  border-radius: 6px; /* Bo góc gốc */
+  font-size: 0.8rem; /* Font-size gốc */
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.btn-edit {
+  background-color: #007bff; /* Màu xanh dương gốc */
+  color: white;
+}
+
+.btn-edit:hover {
+  background-color: #0056b3; /* Hover gốc */
+}
+
+.btn-delete {
+  background-color: #F44336; /* Màu đỏ gốc */
+  color: white;
+}
+
+.btn-delete:hover {
+  background-color: #D32F2F; /* Hover gốc */
+}
+
+/* Modal thêm/sửa trạm */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.5); /* Nền mờ giống VehicleList */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal-content-improved {
+  background: #ffffff;
+  border-radius: var(--radius-md); /* Bo góc từ index.css */
+  padding: 1.5rem;
+  width: 90vw;
+  max-width: 450px; /* Kích thước giống VehicleList */
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2); /* Đổ bóng mạnh hơn */
+}
+
+/* Header của modal */
+.modal-header-improved {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  border-bottom: 2px solid #f0f0f0; /* Viền dưới giống VehicleList */
+  padding-bottom: 0.75rem;
+}
+
+.modal-title {
+  font-size: 1.4rem;
+  color: #000000; /* Màu đen */
+  margin: 0;
+  font-weight: 600;
+}
+
+.close-btn-improved {
+  background: none;
+  border: none;
+  font-size: 1.2rem;
+  cursor: pointer;
+  color: #495057;
+  transition: color 0.3s ease;
+}
+
+.close-btn-improved:hover {
+  color: #dc3545;
+}
+
+/* Form thêm/sửa */
+.station-form-improved {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.form-section {
+  margin-bottom: 1rem;
+}
+
+.section-title {
+  font-size: 1.1rem;
+  color: #000000; /* Màu đen cho tiêu đề phần */
+  margin: 0 0 0.5rem;
+  font-weight: 600;
+}
+
+.form-row {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.form-group-improved {
+  flex: 1;
+  min-width: 200px; /* Phù hợp modal nhỏ */
+}
+
+.label-improved {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: #000000; /* Màu đen */
+  font-size: 0.9rem;
+}
+
+.required {
+  color: #dc3545;
+  font-weight: bold;
+}
+
+.input-improved, .select-improved {
+  width: 100%;
+  padding: 0.6rem 0.8rem;
+  border: 2px solid #e9ecef;
+  border-radius: var(--radius-md); /* Bo góc từ index.css */
+  font-size: 0.9rem;
+  transition: all 0.3s ease;
+  background: white;
+  box-sizing: border-box;
+}
+
+.input-improved:focus, .select-improved:focus {
+  outline: none;
+  border-color: #007bff;
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+}
+
+.select-improved:hover {
+  border-color: #adb5bd;
+}
+
+/* Nút form */
+.form-actions-improved {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 2px solid #f0f0f0; /* Viền trên giống VehicleList */
+}
+
+.btn-cancel-improved, .btn-submit-improved {
+  padding: 0.6rem 1.2rem;
+  border: none;
+  border-radius: 20px; /* Bo góc lớn giống VehicleList */
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  min-width: 100px;
+  text-align: center;
+}
+
+.btn-cancel-improved {
+  background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%); /* Gradient xám */
+  color: white;
+}
+
+.btn-cancel-improved:hover {
+  background: linear-gradient(135deg, #5a6268 0%, #495057 100%);
+  transform: translateY(-2px);
+}
+
+.btn-submit-improved {
+  background: linear-gradient(135deg, #28a745 0%, #20c997 100%); /* Gradient xanh */
+  color: white;
+  font-weight: 600;
+}
+
+.btn-submit-improved:hover {
+  background: linear-gradient(135deg, #218838 0%, #1e7e34 100%);
+  transform: translateY(-2px);
+}
+
+/* Responsive cho mobile */
+@media (max-width: 768px) {
+  .stations-table table {
+    min-width: 100%; /* Giữ nguyên kích thước bảng gốc */
+  }
+  .modal-content-improved {
+    width: 95vw;
+    max-width: 400px; /* Kích thước nhỏ hơn trên mobile, giống VehicleList */
+  }
+  .form-group-improved {
+    min-width: 100%;
+  }
+}
+
+/* Class mới để căn giữa và không xuống dòng */
+.centered-text {
+  text-align: center;
+}
+
+.nowrap {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

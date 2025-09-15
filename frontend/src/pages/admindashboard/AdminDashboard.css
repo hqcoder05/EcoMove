@@ -1,0 +1,94 @@
+/* Container chính - layout đơn giản không sidebar */
+.app-content {
+  min-height: 100vh; /* Giữ chiều cao tối thiểu toàn màn hình */
+  background: linear-gradient(135deg, #E9FDF5 0%, #D0F0DC 100%); /* Giữ gradient nền */
+  padding: 0;
+  width: 100%;
+  height: auto; /* Thay đổi từ ngầm định để tránh kéo dài dư thừa */
+  display: flex;
+  flex-direction: column;
+}
+
+/* Container nội dung chính */
+.content {
+  width: 100%;
+  padding: 0;
+  background: transparent;
+  flex: 1 0 auto; /* Cho phép .content chiếm không gian nhưng không dư thừa */
+}
+
+/* Bảng chứa nội dung tab - thu nhỏ kích thước nhưng vẫn chứa đủ thông tin */
+.tab-content {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  margin: 2rem auto;
+  padding: 1.5rem; /* Giảm padding từ 2rem xuống 1.5rem */
+  width: 80%; /* Giảm từ 90% xuống 80% */
+  max-width: 1300px; /* Giảm từ 1600px xuống 1300px */
+  min-height: 600px; /* Giảm từ 700px xuống 600px */
+  flex: 1 0 auto; /* Đảm bảo .tab-content chiếm không gian cần thiết */
+  overflow-x: auto; /* Cho phép cuộn ngang nếu nội dung vượt quá */
+  overflow-y: auto; /* Cho phép cuộn dọc nếu nội dung vượt quá */
+}
+
+/* Responsive cho màn hình lớn (1920px+) */
+@media (min-width: 1920px) {
+  .tab-content {
+    width: 75%; /* Giảm từ 85% xuống 75% */
+    max-width: 1500px; /* Giảm từ 1800px xuống 1500px */
+    padding: 2rem; /* Giữ padding cho màn hình lớn */
+  }
+}
+
+/* Responsive cho laptop 15.6 inch (1366px - 1919px) */
+@media (min-width: 1366px) and (max-width: 1919px) {
+  .tab-content {
+    width: 82%; /* Giảm từ 88% xuống 82% */
+    max-width: 1200px; /* Giảm từ 1400px xuống 1200px */
+    padding: 1.5rem;
+  }
+}
+
+/* Responsive cho laptop nhỏ (1024px - 1365px) */
+@media (min-width: 1024px) and (max-width: 1365px) {
+  .tab-content {
+    width: 85%; /* Giảm từ 90% xuống 85% */
+    max-width: 1000px; /* Giảm từ 1200px xuống 1000px */
+    padding: 1.5rem;
+  }
+}
+
+/* Responsive cho tablet (768px - 1023px) */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .tab-content {
+    width: 88%; /* Giảm từ 92% xuống 88% */
+    max-width: 800px; /* Giảm từ 900px xuống 800px */
+    padding: 1.2rem;
+    margin: 1.5rem auto;
+  }
+}
+
+/* Responsive cho mobile (dưới 768px) */
+@media (max-width: 767px) {
+  .tab-content {
+    width: 94%; /* Giảm từ 96% xuống 94% */
+    max-width: none;
+    padding: 1rem;
+    margin: 1rem auto;
+    min-height: 450px; /* Giảm từ 500px xuống 450px */
+  }
+}
+
+/* Reset cơ bản */
+* {
+  box-sizing: border-box;
+}
+
+/* Tránh overflow ngang */
+html, body {
+  overflow-x: hidden;
+  width: 100%;
+  margin: 0; /* Đảm bảo không có margin dư thừa */
+  padding: 0; /* Đảm bảo không có padding dư thừa */
+}
