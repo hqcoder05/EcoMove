@@ -2,7 +2,10 @@ package com.GiaoThongTM.demo.vehicles.dtos.request;
 
 import lombok.*;
 
-@Data @NoArgsConstructor @AllArgsConstructor @Builder
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class VehicleRequest {
     // Giữ nguyên tên field theo UI để FE gửi thẳng không phải đổi
     private String name;     // entity.name

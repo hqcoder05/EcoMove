@@ -11,7 +11,7 @@ public enum ErrorCode {
     STATION_ERROR(HttpStatus.BAD_REQUEST.value(), "Không tìm thấy trạm"),
     VEHICLETYPE_ERROR(HttpStatus.BAD_REQUEST.value(), "Không tìm thấy loại phương tiện này"),
     BOOKING_INVALID(HttpStatus.BAD_REQUEST.value(), "Không tìm thấy lịch sử thuê xe"),
-    PENDING_INVALID(HttpStatus.BAD_REQUEST.value(), "Chỉ trạng thái chơf mới được phép cập nhật"),
+    PENDING_INVALID(HttpStatus.BAD_REQUEST.value(), "Chỉ trạng thái chờ mới được phép cập nhật"),
     USERBOOKING_INVALID(HttpStatus.BAD_REQUEST.value(), "Tên tài khoản không hợp lệ để cập nhật lịch sử đặt xe"),
     GETBOOKING_INVALID(HttpStatus.BAD_REQUEST.value(), "Tên tài khoản không hợp lệ để xem lịch sử đặt xe"),
     STATUS_UNCHANGED(HttpStatus.BAD_REQUEST.value(), "Trạng thái mới trùng với trạng thái hiện tại"),
@@ -23,10 +23,26 @@ public enum ErrorCode {
     INVALID_TOKEN(HttpStatus.BAD_REQUEST.value(), "Token không hợp lệ"),
     PASSWORD_WASUSED(HttpStatus.BAD_REQUEST.value(), "Mật khẩu đã tồn tại"),
     UNAUTHORIZED(HttpStatus.BAD_REQUEST.value(), "Bạn không có đủ thẩm quyền"),
-    INVALID_PICKUPTIME(HttpStatus.BAD_REQUEST.value(), "Thời gian đăt phải lớn hơn hoăc bằng thời điểm hiện tại"),
-    INVALID_RETURNTIME(HttpStatus.BAD_REQUEST.value(), "Thời gian trả xe không thể lớn hơn thời gian đặt xe"),
-    USERNAME_INVALID(HttpStatus.BAD_REQUEST.value(), "Tên tài khoản không hợp lệ");
+    INVALID_PICKUPTIME(HttpStatus.BAD_REQUEST.value(), "Thời gian đặt phải lớn hơn hoặc bằng thời điểm hiện tại"),
+    INVALID_RETURNTIME(HttpStatus.BAD_REQUEST.value(), "Thời gian trả xe phải sau thời gian nhận xe"),
+    USERNAME_INVALID(HttpStatus.BAD_REQUEST.value(), "Tên tài khoản không hợp lệ"),
 
+    // ====== PAYMENT ======
+    PAYMENT_INVALID(HttpStatus.NOT_FOUND.value(), "Không tìm thấy giao dịch thanh toán"),
+    PAYMENT_DUPLICATE(HttpStatus.BAD_REQUEST.value(), "Giao dịch này đã được xử lý trước đó"),
+    PAYMENT_AMOUNT_INVALID(HttpStatus.BAD_REQUEST.value(), "Số tiền thanh toán không hợp lệ"),
+    PAYMENT_METHOD_UNSUPPORTED(HttpStatus.BAD_REQUEST.value(), "Phương thức thanh toán không được hỗ trợ"),
+    PAYMENT_NOT_ALLOWED_FOR_BOOKING_STATUS(HttpStatus.BAD_REQUEST.value(), "Không thể thanh toán với trạng thái hiện tại của đơn đặt xe"),
+    PAYMENT_GATEWAY_ERROR(HttpStatus.BAD_GATEWAY.value(), "Lỗi từ cổng thanh toán"),
+    PAYMENT_SESSION_CREATE_FAILED(HttpStatus.INTERNAL_SERVER_ERROR.value(), "Không tạo được phiên thanh toán"),
+    PAYMENT_SIGNATURE_INVALID(HttpStatus.BAD_REQUEST.value(), "Chữ ký/đối soát không hợp lệ"),
+    PAYMENT_WEBHOOK_INVALID(HttpStatus.BAD_REQUEST.value(), "Webhook không hợp lệ hoặc thiếu tham số"),
+    PAYMENT_EXPIRED(HttpStatus.GONE.value(), "Phiên thanh toán đã hết hạn"),
+
+    // ====== REFUND (nếu dùng) ======
+    REFUND_INVALID(HttpStatus.BAD_REQUEST.value(), "Yêu cầu hoàn tiền không hợp lệ"),
+    REFUND_NOT_ALLOWED(HttpStatus.BAD_REQUEST.value(), "Không thể hoàn tiền cho giao dịch này"),
+    REFUND_FAILED(HttpStatus.INTERNAL_SERVER_ERROR.value(), "Hoàn tiền thất bại");
 
     private final int code;
     private final String message;
@@ -35,5 +51,4 @@ public enum ErrorCode {
         this.code = code;
         this.message = message;
     }
-
 }

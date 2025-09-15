@@ -26,6 +26,13 @@ public class VehicleController {
         return mapper.toResponseList(vehicleRepo.findAll());
     }
 
+    @GetMapping("/{id}")
+    public VehicleResponse getById(@PathVariable UUID id) {
+        Vehicle vehicle = vehicleRepo.findById(id)
+                .orElseThrow(() -> new NoSuchElementException("Vehicle not found: " + id));
+        return mapper.toResponse(vehicle);
+    }
+
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public VehicleResponse create(@Valid @RequestBody VehicleRequest req) {
