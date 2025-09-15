@@ -35,6 +35,7 @@ public class UserCustomMapper {
         userResponse.setUsername(user.getUsername());
         userResponse.setName(user.getName());
         userResponse.setEmail(user.getEmail());
+        userResponse.setPhoneNumber(user.getPhoneNumber());
         userResponse.setRoles(user.getRole());
 
         return userResponse;

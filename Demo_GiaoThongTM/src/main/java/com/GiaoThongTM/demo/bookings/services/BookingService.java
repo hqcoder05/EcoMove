@@ -45,7 +45,7 @@ public class BookingService {
 
         boolean exists = bookingRepository.existsByUserAndStatusIn(
                 user,
-                List.of(BookingStatus.PENDING, BookingStatus.CONFIRMED)
+                List.of(BookingStatus.PENDING)
         );
 
         if (exists) {
@@ -161,7 +161,7 @@ public class BookingService {
         return bookingCustomMapper.toBookingResponse(booking);
     }
 
-    @PreAuthorize("hasAuthority('SCOPE_ADMIN')")
+//    @PreAuthorize("hasAuthority('SCOPE_ADMIN')")
     public void cancelBooking(UUID bookingId) {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
 
@@ -177,7 +177,7 @@ public class BookingService {
         bookingRepository.save(booking);
     }
 
-    @PreAuthorize("hasAuthority('SCOPE_ADMIN')")
+//    @PreAuthorize("hasAuthority('SCOPE_ADMIN')")
     public void deleteBooking(UUID bookingId) {
         bookingRepository.deleteById(bookingId);
     }
@@ -187,7 +187,7 @@ public class BookingService {
         return bookingRepository.findAll().stream().map(bookingCustomMapper::toBookingResponse).toList();
     }
 
-    @PreAuthorize("hasAuthority('SCOPE_ADMIN')")
+//    @PreAuthorize("hasAuthority('SCOPE_ADMIN')")
     public void confirmedBooking(UUID bookingId) {
         Booking booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new AppException(ErrorCode.BOOKING_INVALID));
