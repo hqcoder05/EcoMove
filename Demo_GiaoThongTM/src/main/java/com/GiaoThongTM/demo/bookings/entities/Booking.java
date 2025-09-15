@@ -1,6 +1,5 @@
 package com.GiaoThongTM.demo.bookings.entities;
 
-import com.GiaoThongTM.demo.stations.entities.Station;
 import com.GiaoThongTM.demo.users.entities.User;
 import com.GiaoThongTM.demo.vehicles.entities.Vehicle;
 import com.GiaoThongTM.demo.bookings.enums.BookingStatus;
@@ -29,27 +28,20 @@ public class Booking {
 
     private LocalDate returnTime;
 
-    private String notes;
+    private long totalPrice;
 
     @Enumerated(EnumType.STRING)
     private BookingStatus status;
 
-    @Column(nullable = false)
-    private long totalPrice; // Tổng doanh thu
-
-    // Không bắt buộc, nhưng nếu bạn muốn tránh phải tính toán mỗi lần thì:
-    @Transient // Nếu không lưu DB mà chỉ muốn trả ra qua DTO
-    private long durationDays;
+    private Long durationDays;
 
     @ManyToOne
     @JoinColumn(name = "user_id")
     private User user;
 
-    @ManyToOne
-    private Station pickupStation;
+    private String pickupArea;
 
-    @ManyToOne
-    private Station returnStation;
+    private String  returnArea;
 
     @ManyToOne
     private Vehicle vehicle;

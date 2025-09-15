@@ -15,7 +15,7 @@ import java.util.UUID;
 public class BookingUpdateRequest {
     private LocalDate pickupTime;
     private LocalDate returnTime;
-    private UUID pickupStationId;
-    private UUID returnStationId;
+    private String pickupArea;
+    private String returnArea;
     private UUID vehicleTypeId;
 }

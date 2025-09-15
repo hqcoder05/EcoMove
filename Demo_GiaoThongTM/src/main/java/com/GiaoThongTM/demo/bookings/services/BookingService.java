@@ -5,6 +5,8 @@ import com.GiaoThongTM.demo.bookings.dtos.request.BookingUpdateRequest;
 import com.GiaoThongTM.demo.bookings.dtos.request.CancelBookingRequest;
 import com.GiaoThongTM.demo.bookings.dtos.response.BookingResponse;
 import com.GiaoThongTM.demo.bookings.entities.Booking;
+import com.GiaoThongTM.demo.bookings.mappers.BookingCustomMapper;
+import com.GiaoThongTM.demo.commons.utils.AuthUtil;
 import com.GiaoThongTM.demo.users.entities.User;
 import com.GiaoThongTM.demo.bookings.enums.BookingStatus;
 import com.GiaoThongTM.demo.commons.enums.ErrorCode;
@@ -12,6 +14,8 @@ import com.GiaoThongTM.demo.commons.exceptions.AppException;
 import com.GiaoThongTM.demo.bookings.mappers.BookingMapper;
 import com.GiaoThongTM.demo.bookings.repositories.BookingRepository;
 import com.GiaoThongTM.demo.users.repositories.UserRepository;
+import com.GiaoThongTM.demo.vehicles.entities.Vehicle;
+import com.GiaoThongTM.demo.vehicles.repositories.VehicleRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -26,37 +30,33 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class BookingService {
     private final BookingRepository bookingRepository;
-    private final BookingMapper bookingMapper;
+//    private final BookingMapper bookingMapper;
     private final UserRepository userRepository;
+    private final BookingCustomMapper bookingCustomMapper;
+    private final VehicleRepository vehicleRepository;
 
     public BookingResponse createBooking(BookingRequest bookingRequest) {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+
+        Vehicle vehicle = vehicleRepository.findById(bookingRequest.getVehicleTypeId())
+                .orElseThrow(() -> new AppException(ErrorCode.VEHICLE_INVALID));
+
         boolean exists = bookingRepository.existsByUserAndStatusIn(
                 user,
-                List.of(BookingStatus.Pending, BookingStatus.Confirmed)
+                List.of(BookingStatus.PENDING, BookingStatus.CONFIRMED)
         );
 
         if (exists) {
             throw new AppException(ErrorCode.BOOKING_DUPLICATE);
         }
 
-        if(bookingRequest.getPickupTime() == null ||
-        bookingRequest.getReturnTime() == null ||
-        bookingRequest.getPickupStationId() == null ||
-        bookingRequest.getReturnStationId() == null ||
-        bookingRequest.getVehicleTypeId() == null) {
+        if(bookingRequest.getPickupTime() == null
+                || bookingRequest.getReturnTime() == null
+                || bookingRequest.getVehicleTypeId() == null) {
             throw new AppException(ErrorCode.FIELD_ERROR);
         }
-
-//        Station pickupStation = stationRepository.findById(bookingRequest.getPickupStationId())
-//                .orElseThrow(() -> new AppException(ErrorCode.STATION_ERROR));
-//        Station returnStation = stationRepository.findById(bookingRequest.getReturnStationId())
-//                .orElseThrow(() -> new AppException(ErrorCode.STATION_ERROR));
-
-//        VehicleType vehicleType = vehicleTypeRepository.findById(bookingRequest.getVehicleTypeId())
-//                .orElseThrow(() -> new AppException(ErrorCode.VEHICLETYPE_ERROR));
 
         LocalDate now = LocalDate.now();
         if (bookingRequest.getPickupTime().isBefore(now)) {
@@ -66,44 +66,52 @@ public class BookingService {
             throw new AppException(ErrorCode.INVALID_RETURNTIME);
         }
 
-//        int availableVehicles = vehicleRepository.countAvailableVehicleAtStation(
-//                bookingRequest.getPickupStationId(), bookingRequest.getVehicleTypeId(), bookingRequest.getPickupTime());
-//        if (availableVehicles < 1) {
-//            throw new AppException(ErrorCode.VEHICLE_INVALID);
-//        }
-
         long days = ChronoUnit.DAYS.between(bookingRequest.getPickupTime(), bookingRequest.getReturnTime());
+        if (days <= 0) {
+            days = 1; // Tối thiểu 1 ngày
+        }
+        Long vehiclePrice = vehicle.getPricePerDay(); // Hoặc tên field price trong Vehicle entity
+        Long totalPrice = vehiclePrice * days;
 
-        Booking booking = bookingMapper.toBooking(bookingRequest);
+        Booking booking = bookingCustomMapper.toBooking(bookingRequest);
         booking.setUser(user);
         booking.setDurationDays(days);
-        booking.setStatus(BookingStatus.Pending);
+        booking.setTotalPrice(totalPrice);
+        booking.setVehicle(vehicle);
+        booking.setStatus(BookingStatus.PENDING);
 
         Booking result = bookingRepository.save(booking);
-        return bookingMapper.toBookingResponse(result);
+        return bookingCustomMapper.toBookingResponse(result);
     }
 
-    public BookingResponse getUserBooking(){
-        String username = SecurityContextHolder.getContext().getAuthentication().getName();
-        User user = userRepository.findByUsername(username)
+    public List<BookingResponse> getUserBookingById(UUID userId){
+//        UUID userId = AuthUtil.getUserIdFromContext();
+
+        User user = userRepository.findById(userId)
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
-        Booking booking = bookingRepository
-                .findByUserAndStatusIn(user, List.of(BookingStatus.Pending, BookingStatus.Confirmed))
-                .orElseThrow(() -> new AppException(ErrorCode.BOOKING_INVALID));
-        return bookingMapper.toBookingResponse(booking);
+
+        List<Booking> booking = bookingRepository
+                .findAllByUserAndStatusIn(user, List.of(BookingStatus.PENDING, BookingStatus.CONFIRMED));
+
+        return booking.stream()
+                .map(bookingCustomMapper::toBookingResponse)
+                .toList();
     }
 
     public void cancelUserBooking(){
-        String username = SecurityContextHolder.getContext().getAuthentication().getName();
-        User user = userRepository.findByUsername(username)
+        UUID userId = AuthUtil.getUserIdFromContext();
+
+        User user = userRepository.findById(userId)
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+
         Booking booking = bookingRepository
-                .findByUserAndStatusIn(user, List.of(BookingStatus.Pending, BookingStatus.Confirmed))
+                .findByUserAndStatusIn(user, List.of(BookingStatus.PENDING, BookingStatus.CONFIRMED))
                 .orElseThrow(() -> new AppException(ErrorCode.BOOKING_INVALID));
-        if (booking.getStatus() != BookingStatus.Pending && booking.getStatus() != BookingStatus.Confirmed) {
+
+        if (booking.getStatus() != BookingStatus.PENDING && booking.getStatus() != BookingStatus.CONFIRMED) {
             throw new AppException(ErrorCode.STATUS_INVALID_TRANSITION);
         }
-        booking.setStatus(BookingStatus.Canceled);
+        booking.setStatus(BookingStatus.CANCLED);
         bookingRepository.delete(booking);
     }
 
@@ -116,7 +124,7 @@ public class BookingService {
         if (!booking.getUser().getUsername().equals(username)) {
             throw new AppException(ErrorCode.USERBOOKING_INVALID);
         }
-        if(booking.getStatus() != BookingStatus.Pending) {
+        if(booking.getStatus() != BookingStatus.PENDING) {
             throw new AppException(ErrorCode.PENDING_INVALID);
         }
         if (bookingUpdateRequest.getPickupTime() != null) {
@@ -131,13 +139,6 @@ public class BookingService {
             }
             booking.setReturnTime(bookingUpdateRequest.getReturnTime());
         }
-//        if (bookingUpdateRequest.getPickupStationId() != null) {
-//            // Kiểm tra station tồn tại (tuỳ chọn)
-//            booking.setPickupStation(...); // gán entity station
-//        }
-//        if (bookingUpdateRequest.getReturnStationId() != null) {
-//            booking.setReturnStation(...); // gán entity station
-//        }
 //        if (bookingUpdateRequest.getVehicleTypeId() != null) {
 //            // Tìm vehicle phù hợp (còn trống, đúng loại, đúng trạm...)
 //            Vehicle vehicle = vehicleRepository.findAvailableVehicle(
@@ -148,16 +149,16 @@ public class BookingService {
 //
 //            booking.setVehicle(vehicle);
 //        }
-        booking.setStatus(BookingStatus.Pending);
+        booking.setStatus(BookingStatus.PENDING);
         bookingRepository.save(booking);
-        return bookingMapper.toBookingResponse(booking);
+        return bookingCustomMapper.toBookingResponse(booking);
     }
 
-    @PreAuthorize("hasAuthority('SCOPE_ADMIN')")
+//    @PreAuthorize("hasAuthority('SCOPE_ADMIN')")
     public BookingResponse getBooking(UUID bookingId) {
         Booking booking = bookingRepository.findById(bookingId).orElseThrow(
                 () -> new AppException(ErrorCode.BOOKING_INVALID));
-        return bookingMapper.toBookingResponse(booking);
+        return bookingCustomMapper.toBookingResponse(booking);
     }
 
     @PreAuthorize("hasAuthority('SCOPE_ADMIN')")
@@ -169,10 +170,10 @@ public class BookingService {
         if(!booking.getUser().getUsername().equals(username)) {
             throw new AppException(ErrorCode.USERBOOKING_INVALID);
         }
-        if (booking.getStatus() != BookingStatus.Pending && booking.getStatus() != BookingStatus.Confirmed) {
+        if (booking.getStatus() != BookingStatus.PENDING && booking.getStatus() != BookingStatus.CONFIRMED) {
             throw new AppException(ErrorCode.STATUS_INVALID_TRANSITION);
         }
-        booking.setStatus(BookingStatus.Canceled);
+        booking.setStatus(BookingStatus.CANCLED);
         bookingRepository.save(booking);
     }
 
@@ -181,20 +182,20 @@ public class BookingService {
         bookingRepository.deleteById(bookingId);
     }
 
-    @PreAuthorize("hasAuthority('SCOPE_ADMIN')")
+//    @PreAuthorize("hasAuthority('SCOPE_ADMIN')")
     public List<BookingResponse> getAllBookings() {
-        return bookingRepository.findAll().stream().map(bookingMapper::toBookingResponse).toList();
+        return bookingRepository.findAll().stream().map(bookingCustomMapper::toBookingResponse).toList();
     }
 
     @PreAuthorize("hasAuthority('SCOPE_ADMIN')")
-    public void ConfirmedBooking(UUID bookingId) {
+    public void confirmedBooking(UUID bookingId) {
         Booking booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new AppException(ErrorCode.BOOKING_INVALID));
 
-        if(booking.getStatus() != BookingStatus.Pending) {
+        if(booking.getStatus() != BookingStatus.PENDING) {
             throw new AppException(ErrorCode.PENDING_INVALID);
         }
-        booking.setStatus(BookingStatus.Confirmed);
+        booking.setStatus(BookingStatus.CONFIRMED);
         bookingRepository.save(booking);
     }
 
@@ -205,13 +206,12 @@ public class BookingService {
         if(booking.getStatus() == cancel.getStatus()) {
             throw new AppException(ErrorCode.STATUS_UNCHANGED);
         }
-        if(booking.getStatus() == BookingStatus.Pending
-                && (cancel.getStatus() == BookingStatus.Confirmed || cancel.getStatus() == BookingStatus.Canceled)) {
+        if(booking.getStatus() == BookingStatus.PENDING
+                && (cancel.getStatus() == BookingStatus.CONFIRMED || cancel.getStatus() == BookingStatus.CANCLED)) {
             booking.setStatus(cancel.getStatus());
             bookingRepository.save(booking);
         }else{
             throw new AppException(ErrorCode.STATUS_INVALID_TRANSITION);
         }
     }
-
 }
