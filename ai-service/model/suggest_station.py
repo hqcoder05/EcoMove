@@ -1,5 +1,38 @@
+import math
 import pandas as pd
+import requests
 
+# ==========================
+# Hàm tính khoảng cách Haversine
+# ==========================
+def haversine(lat1, lon1, lat2, lon2):
+    R = 6371  # km
+    phi1, phi2 = math.radians(lat1), math.radians(lat2)
+    dphi = math.radians(lat2 - lat1)
+    dlambda = math.radians(lon2 - lon1)
+    a = math.sin(dphi/2)**2 + math.cos(phi1)*math.cos(phi2)*math.sin(dlambda/2)**2
+    return 2 * R * math.atan2(math.sqrt(a), math.sqrt(1-a))
+
+# ==========================
+# Hàm gọi OSRM để tính travel time
+# ==========================
+def osrm_travel_time(lat1, lon1, lat2, lon2, speed_kmph=30):
+    try:
+        url = f"http://router.project-osrm.org/route/v1/driving/{lon1},{lat1};{lon2},{lat2}?overview=false"
+        r = requests.get(url, timeout=5)
+        data = r.json()
+        if "routes" in data and len(data["routes"]) > 0:
+            duration_sec = data["routes"][0]["duration"]  # giây
+            return duration_sec / 60.0   # phút
+    except Exception as e:
+        print("OSRM error:", e)
+    # fallback Haversine nếu OSRM fail
+    dist_km = haversine(lat1, lon1, lat2, lon2)
+    return (dist_km / speed_kmph) * 60
+
+# ==========================
+# Hàm tính thời gian chờ
+# ==========================
 def estimate_min_waiting_time(charging_vehicles: list) -> float:
     if not charging_vehicles:
         return 0
@@ -23,75 +56,63 @@ def estimate_avg_waiting_time(charging_vehicles: list) -> float:
     data['time_minutes'] = data['battery_left_kwh'] / data['charge_rate_kw'] * 60
     return data['time_minutes'].mean()
 
+# ==========================
+# Gợi ý trạm
+# ==========================
 def suggest_nearby_station(
-    current_station: str,
+    user_location: dict,
     stations_data: list,
     speed_kmph: float = 30,
-    max_acceptable_time: float = 45,
     max_distance_km: float = 15,
     slot_occupancy_threshold: float = 0.8
 ) -> dict:
     if not stations_data:
-        return {"error": "No stations provided"}
+        return {"lỗi": "Không có dữ liệu trạm sạc nào"}
     
-    current_data = next((s for s in stations_data if s.get("station_id") == current_station), None)
-    if not current_data:
-        return {"error": f"Current station {current_station} not found"}
-
+    # Tính travel_time bằng OSRM + các metric cho mỗi trạm
     for s in stations_data:
-        required_keys = {"station_id", "available_slots", "total_slots", "distance_km"}
-        if missing := [k for k in required_keys if k not in s]:
-            return {"error": f"Station {s.get('station_id')} missing fields: {missing}"}
-
-    valid_stations = []
-    for s in stations_data:
-        if s["distance_km"] > max_distance_km:
-            continue
-
-        s["travel_time_min"] = (s["distance_km"] / speed_kmph) * 60
+        if not all(k in s for k in ["station_id", "lat", "lon", "total_slots", "available_slots"]):
+            return {"lỗi": f"Thiếu thông tin trạm: {s}"}
+        
+        s["distance_km"] = haversine(user_location["lat"], user_location["lon"], s["lat"], s["lon"])
+        s["travel_time_min"] = osrm_travel_time(user_location["lat"], user_location["lon"], s["lat"], s["lon"], speed_kmph)
         s["avg_wait_time"] = estimate_avg_waiting_time(s.get("charging_vehicles", []))
         s["min_wait_time"] = estimate_min_waiting_time(s.get("charging_vehicles", []))
         s["total_time_min"] = s["travel_time_min"] + s["min_wait_time"]
 
-        # Tính toán tỷ lệ sử dụng slot
-        total = s.get("total_slots", 1) or 1  # tránh chia cho 0
+        total = s.get("total_slots", 1) or 1
         used = total - s.get("available_slots", 0)
         s["occupancy_rate"] = used / total
 
-        valid_stations.append(s)
+    # Chọn trạm gần nhất làm current
+    current_data = min(stations_data, key=lambda x: x["distance_km"])
+    current_station = current_data["station_id"]
 
-    current_data = next((s for s in valid_stations if s["station_id"] == current_station), None)
-    if not current_data:
-        closest = min(valid_stations, key=lambda x: x["distance_km"], default=None)
-        return {
-            "error": "Current station beyond max distance",
-            "closest_station": closest["station_id"] if closest else "None",
-            "distance_km": closest["distance_km"] if closest else 0
-        }
-
+    # Nếu trạm gần nhất còn slot
     if current_data["available_slots"] > 0:
         return {
-            "suggested_station": current_station,
-            "reason": "Immediate charging available",
-            "metrics": {
-                "wait_time": 0,
-                "available_slots": current_data["available_slots"]
+            "tram_de_xuat": current_station,
+            "ly_do": "Có thể sạc ngay lập tức",
+            "thong_so": {
+                "thoi_gian_cho": 0,
+                "so_slot_trong": current_data["available_slots"],
+                "khoang_cach_km": round(current_data["distance_km"], 2),
+                "thoi_gian_di_chuyen_phut": round(current_data["travel_time_min"], 1)
             }
         }
 
-    current_min_wait = current_data["min_wait_time"] if current_data["min_wait_time"] > 0 else current_data["avg_wait_time"]
-
+    # Nếu hết slot → tìm trạm khác
+    current_min_wait = current_data["min_wait_time"] or current_data["avg_wait_time"]
     better_stations = []
-    for s in valid_stations:
+    for s in stations_data:
         if s["station_id"] == current_station:
             continue
-
+        if s["distance_km"] > max_distance_km:
+            continue
         if s["occupancy_rate"] >= slot_occupancy_threshold:
             continue
-
         if s["available_slots"] == 0 and s["min_wait_time"] > current_min_wait:
             continue
-
         if s["total_time_min"] < current_min_wait:
             better_stations.append(s)
 
@@ -99,27 +120,30 @@ def suggest_nearby_station(
         better_stations.sort(key=lambda x: (x["total_time_min"], x["distance_km"]))
         best = better_stations[0]
         if best["available_slots"] > 0:
-            reason = f"Immediate availability ({best['travel_time_min']:.1f}min travel)"
+            reason = f"Có slot trống ngay (mất {best['travel_time_min']:.1f} phút di chuyển)"
         else:
-            reason = (f"Faster than waiting ({best['total_time_min']:.1f}min total vs " 
-                      f"{current_min_wait:.1f}min wait at current)")
+            reason = (f"Nhanh hơn so với chờ ({best['total_time_min']:.1f} phút tổng so với "
+                      f"{current_min_wait:.1f} phút chờ tại trạm gần nhất)")
         return {
-            "suggested_station": best["station_id"],
-            "reason": reason,
-            "metrics": {
-                "total_time": round(best["total_time_min"], 1),
-                "travel_time": round(best["travel_time_min"], 1),
-                "wait_time": round(best["min_wait_time"], 1),
-                "distance_km": best["distance_km"],
-                "available_slots": best["available_slots"]
+            "tram_de_xuat": best["station_id"],
+            "ly_do": reason,
+            "thong_so": {
+                "tong_thoi_gian": round(best["total_time_min"], 1),
+                "thoi_gian_di_chuyen": round(best["travel_time_min"], 1),
+                "thoi_gian_cho": round(best["min_wait_time"], 1),
+                "khoang_cach_km": round(best["distance_km"], 2),
+                "so_slot_trong": best["available_slots"]
             }
         }
 
+    # Nếu không có trạm tốt hơn
     return {
-        "suggested_station": current_station,
-        "reason": f"No better options within {max_distance_km}km",
-        "metrics": {
-            "estimated_wait": round(current_min_wait, 1),
-            "available_slots": current_data["available_slots"]
+        "tram_de_xuat": current_station,
+        "ly_do": f"Không có trạm tốt hơn trong phạm vi {max_distance_km}km",
+        "thong_so": {
+            "thoi_gian_cho_uoc_tinh": round(current_min_wait, 1),
+            "so_slot_trong": current_data["available_slots"],
+            "khoang_cach_km": round(current_data["distance_km"], 2),
+            "thoi_gian_di_chuyen_phut": round(current_data["travel_time_min"], 1)
         }
     }
